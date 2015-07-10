@@ -2,6 +2,7 @@ package engine;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class Character {
 	
@@ -18,9 +19,22 @@ public class Character {
 	}
 	
 	public enum Skills {
-		Acrobatics, AnimalHandling, Arcana, Athletics, Deception, History, Insight, Intimidation, Investigation, Medicine, Nature, Perception, Performance, Persuasion, Religion, SleightOfHand, Stealth, Survival
+		Acrobatics ("Acrobatics (Dex)"), AnimalHandling ("AnimalHandling (Wis)"), Arcana ("Arcana (Int)"),
+		Athletics ("Athletics (Str)"), Deception ("Deception (Cha)"), History ("History (Int)"), Insight ("Insight (Wis)"),
+		Intimidation ("Intimidation (Cha)"), Investigation ("Investigation (Int)"), Medicine ("Medicine (Wis)"),
+		Nature ("Nature (Int)"), Perception ("Perception (Wis)"), Performance ("Performance (Cha)"), Persuasion ("Persuasion (Cha)"),
+		Religion ("Religion (Int)"), SleightOfHand ("Sleight of Hand (Dex)"), Stealth ("Stealth (Dex)"), Survival ("Survival (Wis)");
+
+		private final String name;
+
+		Skills(String s) {
+			name = s;
+		}
+
+		public String toString(){
+			return name;
+		}
 	}
-	
 	
 	// User name
 	private String playerName;
