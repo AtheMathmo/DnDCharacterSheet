@@ -1,13 +1,10 @@
 package gui;
 
-import engine.*;
 import engine.Character;
-import org.w3c.dom.Attr;
 
 import java.awt.*;
 
 import javax.swing.*;
-import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
 import java.util.HashMap;
 import java.util.Map;
@@ -22,15 +19,15 @@ public class CharacterSheetGUI extends JFrame {
 	 */
 	public static void main(String[] args) {
 		EventQueue.invokeLater(new Runnable() {
-			public void run() {
-				try {
-					CharacterSheetGUI frame = new CharacterSheetGUI();
-					frame.setVisible(true);
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-			}
-		});
+            public void run() {
+                try {
+                    CharacterSheetGUI frame = new CharacterSheetGUI();
+                    frame.setVisible(true);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        });
 	}
 
 	/**
@@ -189,6 +186,12 @@ public class CharacterSheetGUI extends JFrame {
         private SavingThrowsPanel savingThrowsPanel;
         private SkillsPanel skillsPanel;
 
+        private InputBox inspirationInputBox;
+        private InputBox proficiencyBonus;
+        private InputBox passiveWisInputBox;
+
+        private JScrollPane profAndLangScrollPane;
+
         public CharacterValuesHolder() {
 
             this.InitializePanel();
@@ -203,17 +206,73 @@ public class CharacterSheetGUI extends JFrame {
             attrPanel = new AttributePanel();
             this.add(attrPanel, BorderLayout.WEST);
 
-            JPanel holdingPanel = new JPanel();
-            holdingPanel.setLayout(new BoxLayout(holdingPanel, BoxLayout.Y_AXIS));
-            this.add(holdingPanel, BorderLayout.EAST);
+            JPanel rightHoldingPanel = new JPanel();
+            rightHoldingPanel.setLayout(new BoxLayout(rightHoldingPanel, BoxLayout.Y_AXIS));
+            this.add(rightHoldingPanel, BorderLayout.CENTER);
+
+            inspirationInputBox =  new InputBox("Inspiration");
+            rightHoldingPanel.add(inspirationInputBox);
+            inspirationInputBox.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+            proficiencyBonus = new InputBox("Proficiency Bonus");
+            rightHoldingPanel.add(proficiencyBonus);
+            proficiencyBonus.setAlignmentX(Component.LEFT_ALIGNMENT);
 
             skillsPanel = new SkillsPanel();
-            holdingPanel.add(skillsPanel);
+            rightHoldingPanel.add(skillsPanel);
 
             JLabel skillsLabel = new JLabel("Skills");
-            Font sectionTitleFont = new Font(Font.SANS_SERIF,Font.BOLD, 22);
+            Font sectionTitleFont = new Font(Font.SANS_SERIF,Font.BOLD, 18);
             skillsLabel.setFont(sectionTitleFont);
-            holdingPanel.add(skillsLabel);
+            rightHoldingPanel.add(skillsLabel);
+
+            JPanel bottomHoldingPanel = new JPanel();
+            bottomHoldingPanel.setLayout(new BoxLayout(bottomHoldingPanel, BoxLayout.Y_AXIS));
+            this.add(bottomHoldingPanel, BorderLayout.SOUTH);
+
+            passiveWisInputBox = new InputBox("Passive Wisdom (Perception)");
+            bottomHoldingPanel.add(passiveWisInputBox);
+
+            JTextArea profAndLangTextArea = new JTextArea(10,20);
+            profAndLangTextArea.setLineWrap(true);
+            profAndLangTextArea.setWrapStyleWord(true);
+
+            profAndLangScrollPane = new JScrollPane(profAndLangTextArea);
+            profAndLangScrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+
+            bottomHoldingPanel.add(profAndLangScrollPane);
+
+            JLabel profAndLangLabel = new JLabel("Other Proficiencies & Languages");
+            profAndLangLabel.setFont(sectionTitleFont);
+            bottomHoldingPanel.add(profAndLangLabel);
+
+        }
+
+        private class InputBox extends JPanel {
+
+            private JTextField inputBox;
+            private String labelText;
+
+            public InputBox(String labelText) {
+                this.labelText = labelText;
+
+                InitializePanel();
+                AddComponents();
+            }
+
+            private void InitializePanel() {
+                this.setLayout(new BoxLayout(this, BoxLayout.X_AXIS));
+            }
+
+            private void AddComponents() {
+                inputBox = new JTextField();
+                this.add(inputBox);
+                inputBox.setColumns(3);
+                inputBox.setMaximumSize(new Dimension(inputBox.getPreferredSize()));
+
+                JLabel boxLabel = new JLabel(labelText);
+                this.add(boxLabel);
+            }
         }
     }
 
@@ -304,13 +363,44 @@ public class CharacterSheetGUI extends JFrame {
         }
     }
 
+    private class CheckBoxPanel extends JPanel {
+
+        private String labelText;
+        private JCheckBox checkBox;
+        private JTextField textField;
+
+        public CheckBoxPanel(String labelText) {
+            this.labelText = labelText;
+            this.InitializePanel();
+            this.AddComponents();
+        }
+
+        private void InitializePanel() {
+            this.setLayout(new BoxLayout(this, BoxLayout.X_AXIS));
+        }
+
+        private void AddComponents() {
+            checkBox = new JCheckBox();
+            this.add(checkBox);
+            checkBox.setSelected(false);
+
+            textField = new JTextField();
+            this.add(textField);
+            textField.setColumns(3);
+            textField.setMaximumSize(new Dimension(textField.getPreferredSize().width, Integer.MAX_VALUE));
+
+            JLabel label = new JLabel(labelText);
+            this.add(label);
+        }
+    }
+
     private class SavingThrowsPanel extends JPanel {
 
     }
 
     private class SkillsPanel extends JPanel {
 
-        private Map<Character.Skills, SkillPanel> skillPanelMap;
+        private Map<Character.Skills, CheckBoxPanel> skillPanelMap;
 
         public SkillsPanel() {
             InitializePanel();
@@ -325,41 +415,10 @@ public class CharacterSheetGUI extends JFrame {
             skillPanelMap = new HashMap<>();
 
             for (Character.Skills skill : Character.Skills.values()) {
-                SkillPanel skillPanel = new SkillPanel(skill);
+                CheckBoxPanel skillPanel = new CheckBoxPanel(skill.toString());
                 skillPanelMap.put(skill, skillPanel);
                 this.add(skillPanel);
                 skillPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
-            }
-        }
-
-        private class SkillPanel extends JPanel {
-
-            private Character.Skills skill;
-            private JCheckBox checkBox;
-            private JTextField textField;
-
-            public SkillPanel(Character.Skills skill) {
-                this.skill = skill;
-                this.InitializePanel();
-                this.AddComponents();
-            }
-
-            private void InitializePanel() {
-                this.setLayout(new BoxLayout(this, BoxLayout.X_AXIS));
-            }
-
-            private void AddComponents() {
-                checkBox = new JCheckBox();
-                this.add(checkBox);
-                checkBox.setSelected(false);
-
-                textField = new JTextField();
-                this.add(textField);
-                textField.setColumns(3);
-                textField.setMaximumSize(new Dimension(textField.getPreferredSize().width, Integer.MAX_VALUE));
-
-                JLabel label = new JLabel(skill.toString());
-                this.add(label);
             }
         }
     }
