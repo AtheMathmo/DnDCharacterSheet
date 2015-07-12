@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="DnDCharacterSheet:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/DnDCharacterSheet_jar</output-path>
+    <root id="archive" name="DnDCharacterSheet.jar">
+      <element id="module-output" name="DnDCharacterSheet" />
+    </root>
+  </artifact>
+</component>
