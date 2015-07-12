@@ -1,16 +1,18 @@
 package gui;
 
 import engine.Character;
+import jdk.internal.util.xml.impl.Input;
 
 import java.awt.*;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
+import java.util.List;
 import javax.swing.border.BevelBorder;
 
 public class CharacterSheetGUI extends JFrame {
+    public static final Font SectionTitleFont = new Font(Font.SANS_SERIF,Font.BOLD, 18);
 
 	private JPanel contentPane;
 
@@ -43,19 +45,12 @@ public class CharacterSheetGUI extends JFrame {
 		
 		HeaderPanel headerPanel = new HeaderPanel();
 		contentPane.add(headerPanel, BorderLayout.NORTH);
-		
-		JPanel panel_1 = new JPanel();
-		contentPane.add(panel_1, BorderLayout.CENTER);
-        panel_1.add(new JLabel("CENTER"));
-		
-		JPanel panel_2 = new JPanel();
-		contentPane.add(panel_2, BorderLayout.EAST);
-		
+
 		CharacterValuesHolder charValueHolder = new CharacterValuesHolder();
 		contentPane.add(charValueHolder, BorderLayout.WEST);
-		
-		JPanel panel_4 = new JPanel();
-		contentPane.add(panel_4, BorderLayout.SOUTH);
+
+        CombatPanel combatPanel = new CombatPanel();
+        contentPane.add(combatPanel, BorderLayout.CENTER);
 	}
 
     private class HeaderPanel extends JPanel {
@@ -68,11 +63,12 @@ public class CharacterSheetGUI extends JFrame {
             InitializePanel();
             AddComponents();
         }
-        private void InitializePanel() {
+
+        void InitializePanel() {
 
         }
 
-        private void AddComponents() {
+        void AddComponents() {
             JLabel characterNameLabel = new JLabel("Character Name");
             this.add(characterNameLabel);
 
@@ -190,7 +186,7 @@ public class CharacterSheetGUI extends JFrame {
         private InputBox proficiencyBonus;
         private InputBox passiveWisInputBox;
 
-        private JScrollPane profAndLangScrollPane;
+        private JTextArea profAndLangTextArea;
 
         public CharacterValuesHolder() {
 
@@ -199,51 +195,56 @@ public class CharacterSheetGUI extends JFrame {
         }
 
         private void InitializePanel() {
-
+            this.setLayout(new GridBagLayout());
         }
 
         private void AddComponents() {
+            GridBagConstraints constraints = new GridBagConstraints();
             attrPanel = new AttributePanel();
-            this.add(attrPanel, BorderLayout.WEST);
+
+            constraints.gridx = 0; constraints.gridy  = 0;
+            this.add(attrPanel, constraints);
 
             JPanel rightHoldingPanel = new JPanel();
             rightHoldingPanel.setLayout(new BoxLayout(rightHoldingPanel, BoxLayout.Y_AXIS));
-            this.add(rightHoldingPanel, BorderLayout.CENTER);
+
+            constraints.gridx = 1; constraints.gridy = 0;
+            this.add(rightHoldingPanel, constraints);
 
             inspirationInputBox =  new InputBox("Inspiration");
             rightHoldingPanel.add(inspirationInputBox);
-            inspirationInputBox.setAlignmentX(Component.LEFT_ALIGNMENT);
+            inspirationInputBox.setAlignmentX(LEFT_ALIGNMENT);
 
             proficiencyBonus = new InputBox("Proficiency Bonus");
             rightHoldingPanel.add(proficiencyBonus);
-            proficiencyBonus.setAlignmentX(Component.LEFT_ALIGNMENT);
+            proficiencyBonus.setAlignmentX(LEFT_ALIGNMENT);
+
+            savingThrowsPanel = new SavingThrowsPanel();
+            rightHoldingPanel.add(savingThrowsPanel);
 
             skillsPanel = new SkillsPanel();
             rightHoldingPanel.add(skillsPanel);
 
-            JLabel skillsLabel = new JLabel("Skills");
-            Font sectionTitleFont = new Font(Font.SANS_SERIF,Font.BOLD, 18);
-            skillsLabel.setFont(sectionTitleFont);
-            rightHoldingPanel.add(skillsLabel);
-
             JPanel bottomHoldingPanel = new JPanel();
             bottomHoldingPanel.setLayout(new BoxLayout(bottomHoldingPanel, BoxLayout.Y_AXIS));
-            this.add(bottomHoldingPanel, BorderLayout.SOUTH);
+
+            constraints.gridx = 0; constraints.gridy = 1; constraints.gridwidth = 2;
+            this.add(bottomHoldingPanel, constraints);
 
             passiveWisInputBox = new InputBox("Passive Wisdom (Perception)");
             bottomHoldingPanel.add(passiveWisInputBox);
 
-            JTextArea profAndLangTextArea = new JTextArea(10,20);
+            profAndLangTextArea = new JTextArea(6,20);
             profAndLangTextArea.setLineWrap(true);
             profAndLangTextArea.setWrapStyleWord(true);
+            profAndLangTextArea.setMinimumSize(new Dimension(profAndLangTextArea.getPreferredSize()));
 
-            profAndLangScrollPane = new JScrollPane(profAndLangTextArea);
+            JScrollPane profAndLangScrollPane = new JScrollPane(profAndLangTextArea);
             profAndLangScrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
-
             bottomHoldingPanel.add(profAndLangScrollPane);
 
             JLabel profAndLangLabel = new JLabel("Other Proficiencies & Languages");
-            profAndLangLabel.setFont(sectionTitleFont);
+            profAndLangLabel.setFont(CharacterSheetGUI.SectionTitleFont);
             bottomHoldingPanel.add(profAndLangLabel);
 
         }
@@ -316,6 +317,7 @@ public class CharacterSheetGUI extends JFrame {
 
         private void InitializePanel() {
             this.setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
+            this.setBorder(new BevelBorder(BevelBorder.LOWERED, null, null, null, null));
         }
 
         private void AddComponents() {
@@ -387,7 +389,8 @@ public class CharacterSheetGUI extends JFrame {
             textField = new JTextField();
             this.add(textField);
             textField.setColumns(3);
-            textField.setMaximumSize(new Dimension(textField.getPreferredSize().width, Integer.MAX_VALUE));
+            textField.setMaximumSize(textField.getPreferredSize());
+            textField.setMinimumSize(textField.getPreferredSize());
 
             JLabel label = new JLabel(labelText);
             this.add(label);
@@ -396,6 +399,50 @@ public class CharacterSheetGUI extends JFrame {
 
     private class SavingThrowsPanel extends JPanel {
 
+        private CheckBoxPanel strCheckBox;
+        private CheckBoxPanel dexCheckBox;
+        private CheckBoxPanel conCheckBox;
+        private CheckBoxPanel intCheckBox;
+        private CheckBoxPanel wisCheckBox;
+        private CheckBoxPanel chaCheckBox;
+
+        public SavingThrowsPanel() {
+            InitializePanel();
+            AddComponents();
+        }
+
+        private void InitializePanel() {
+            this.setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
+            this.setBorder(new BevelBorder(BevelBorder.LOWERED, null, null, null, null));
+        }
+
+        private void AddComponents() {
+            strCheckBox = new CheckBoxPanel("Strength");
+            dexCheckBox = new CheckBoxPanel("Dexterity");
+            conCheckBox = new CheckBoxPanel("Constitution");
+            intCheckBox = new CheckBoxPanel("Intelligence");
+            wisCheckBox = new CheckBoxPanel("Wisdom");
+            chaCheckBox = new CheckBoxPanel("Charisma");
+
+            this.add(strCheckBox);
+            this.add(dexCheckBox);
+            this.add(conCheckBox);
+            this.add(intCheckBox);
+            this.add(wisCheckBox);
+            this.add(chaCheckBox);
+
+            strCheckBox.setAlignmentX(LEFT_ALIGNMENT);
+            dexCheckBox.setAlignmentX(LEFT_ALIGNMENT);
+            conCheckBox.setAlignmentX(LEFT_ALIGNMENT);
+            intCheckBox.setAlignmentX(LEFT_ALIGNMENT);
+            wisCheckBox.setAlignmentX(LEFT_ALIGNMENT);
+            chaCheckBox.setAlignmentX(LEFT_ALIGNMENT);
+
+            JLabel savingThrowsLabel = new JLabel("Saving Throws");
+            savingThrowsLabel.setFont(CharacterSheetGUI.SectionTitleFont);
+            this.add(savingThrowsLabel);
+
+        }
     }
 
     private class SkillsPanel extends JPanel {
@@ -409,6 +456,7 @@ public class CharacterSheetGUI extends JFrame {
 
         private void InitializePanel() {
             this.setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
+            this.setBorder(new BevelBorder(BevelBorder.LOWERED, null, null, null, null));
         }
 
         private void AddComponents() {
@@ -418,10 +466,267 @@ public class CharacterSheetGUI extends JFrame {
                 CheckBoxPanel skillPanel = new CheckBoxPanel(skill.toString());
                 skillPanelMap.put(skill, skillPanel);
                 this.add(skillPanel);
-                skillPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+                skillPanel.setAlignmentX(LEFT_ALIGNMENT);
+            }
+
+            JLabel skillsLabel = new JLabel("Skills");
+            skillsLabel.setFont(CharacterSheetGUI.SectionTitleFont);
+            this.add(skillsLabel);
+
+        }
+    }
+
+    private class CombatPanel extends JPanel {
+        private InCombatPanel inCombatPanel;
+        private AtkSpellsPanel atkSpellsPanel;
+        public CombatPanel() {
+            InitializePanel();
+            AddComponents();
+        }
+
+        private void InitializePanel() {
+            this.setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
+        }
+
+        private void AddComponents() {
+            inCombatPanel = new InCombatPanel();
+            this.add(inCombatPanel);
+
+            atkSpellsPanel = new AtkSpellsPanel();
+            this.add(atkSpellsPanel);
+        }
+    }
+
+    private class InCombatPanel extends JPanel {
+        private TextBoxOverLabel armorClassPanel;
+        private TextBoxOverLabel initiativePanel;
+        private TextBoxOverLabel speedPanel;
+        private JTextField hpMaxTextField;
+        private TextBoxOverLabel hpCurrentPanel;
+        private TextBoxOverLabel hpTempPanel;
+        private JTextField hitDiceTotalTextField;
+        private TextBoxOverLabel hitDicePanel;
+        private DeathSaveCheckBoxesPanel successDeathSaves;
+        private DeathSaveCheckBoxesPanel failureDeathSaves;
+
+        public InCombatPanel() {
+            InitializePanel();
+            AddComponents();
+        }
+
+        private void InitializePanel() {
+            this.setLayout(new GridBagLayout());
+            this.setBorder(new BevelBorder(BevelBorder.LOWERED, null, null, null, null));
+        }
+
+        private void AddComponents() {
+            GridBagConstraints constraints = new GridBagConstraints();
+            constraints.gridx = 0; constraints.gridy = 0; constraints.ipadx =1; constraints.ipady = 1;
+
+            // Armor, Initiative, Speed
+            armorClassPanel = new TextBoxOverLabel("Armor Class", 3);
+            constraints.weightx = 1; constraints.weighty = 1;
+            this.add(armorClassPanel, constraints);
+
+            initiativePanel = new TextBoxOverLabel("Initiative", 3);
+            constraints.gridx = 1;
+            this.add(initiativePanel, constraints);
+
+            speedPanel = new TextBoxOverLabel("Speed", 3);
+            constraints.gridx = 2;
+            this.add(speedPanel, constraints);
+
+            // Current HP
+            JPanel currentHPHolder = new JPanel();
+            currentHPHolder.setLayout(new GridBagLayout());
+
+            JLabel hpMaxLabel = new JLabel("Hit Point Maximum");
+            constraints.gridx = 0; constraints.gridy = 0;
+            currentHPHolder.add(hpMaxLabel, constraints);
+
+            hpMaxTextField = new JTextField();
+            hpMaxTextField.setColumns(3);
+            constraints.gridx = 1; constraints.weightx = 1;
+            currentHPHolder.add(hpMaxTextField, constraints);
+
+            hpCurrentPanel = new TextBoxOverLabel("Current Hit Points", 7);
+            constraints.gridx = 0; constraints.gridy = 1; constraints.gridwidth = 2;
+            currentHPHolder.add(hpCurrentPanel, constraints);
+
+            constraints.gridwidth = 3;
+            this.add(currentHPHolder, constraints);
+
+            // Temp HP
+            hpTempPanel = new TextBoxOverLabel("Temporary Hit Points", 7);
+            constraints.gridx = 0; constraints.gridy = 2; constraints.gridwidth = 3;
+            this.add(hpTempPanel, constraints);
+
+            // Hit Dice, Death Saves
+            JPanel hitDiceHolder = new JPanel();
+            hitDiceHolder.setLayout(new GridBagLayout());
+
+            JLabel totalLabel = new JLabel("Total");
+            constraints.gridx = 0; constraints.gridy = 0; constraints.gridwidth = 1;
+            hitDiceHolder.add(totalLabel, constraints);
+
+            hitDiceTotalTextField = new JTextField();
+            hitDiceTotalTextField.setColumns(3);
+            constraints.gridx = 1; constraints.weightx = 1;
+            hitDiceHolder.add(hitDiceTotalTextField, constraints);
+
+            hitDicePanel = new TextBoxOverLabel("Hit Dice", 7);
+            constraints.gridx = 0; constraints.gridy = 1; constraints.gridwidth = 2;
+            hitDiceHolder.add(hitDicePanel, constraints);
+
+            constraints.gridx = 0; constraints.gridy = 3; constraints.gridwidth = 1;
+            this.add(hitDiceHolder, constraints);
+
+            JPanel deathSaveHolder = new JPanel();
+            deathSaveHolder.setLayout(new GridBagLayout());
+
+            successDeathSaves = new DeathSaveCheckBoxesPanel("Successes");
+            constraints.gridx = 0; constraints.gridy = 0; constraints.anchor = GridBagConstraints.LINE_END;
+            deathSaveHolder.add(successDeathSaves, constraints);
+
+            failureDeathSaves  = new DeathSaveCheckBoxesPanel("Failures");
+            constraints.gridy = 1;
+            deathSaveHolder.add(failureDeathSaves, constraints);
+
+            JLabel deathSavesLabel = new JLabel("Death Saves");
+            deathSavesLabel.setFont(CharacterSheetGUI.SectionTitleFont);
+            constraints.gridy = 2; constraints.anchor = GridBagConstraints.CENTER;
+            deathSaveHolder.add(deathSavesLabel, constraints);
+
+            constraints.gridx = 1; constraints.gridy = 3;
+            this.add(deathSaveHolder, constraints);
+        }
+
+        private class TextBoxOverLabel extends JPanel {
+            private JTextField textField;
+
+            public TextBoxOverLabel(String labelText,int cols) {
+                this.InitializePanel();
+                this.AddComponents(labelText, cols);
+            }
+
+            private void InitializePanel() {
+                this.setLayout(new GridBagLayout());
+            }
+
+            private void AddComponents(String labelText, int cols) {
+                GridBagConstraints constraints = new GridBagConstraints();
+                constraints.fill = GridBagConstraints.NONE; constraints.anchor = GridBagConstraints.CENTER;
+                this.textField = new JTextField();
+                this.textField.setColumns(cols);
+
+                constraints.gridx = 0; constraints.gridy = 0; constraints.gridwidth = 1; constraints.weightx = 1;
+                this.add(textField, constraints);
+
+                JLabel label = new JLabel(labelText, JLabel.CENTER);
+                label.setFont(CharacterSheetGUI.SectionTitleFont);
+                constraints.gridx = 0; constraints.gridy = 1; constraints.gridwidth = 3;
+                this.add(label, constraints);
+            }
+        }
+
+        private class DeathSaveCheckBoxesPanel extends JPanel {
+
+            private JCheckBox firstCheckBox;
+            private JCheckBox secondCheckBox;
+            private JCheckBox thirdCheckBox;
+
+            private final int boxSize = 5;
+
+            public DeathSaveCheckBoxesPanel(String labelText) {
+                InitializePanel();
+                AddComponents(labelText);
+            }
+
+            private void InitializePanel() {
+                this.setLayout(new BoxLayout(this, BoxLayout.X_AXIS));
+            }
+
+            private void AddComponents(String labelText) {
+                JLabel label = new JLabel(labelText);
+                this.add(label);
+
+                firstCheckBox = new JCheckBox();
+                secondCheckBox = new JCheckBox();
+                thirdCheckBox = new JCheckBox();
+
+                this.add(firstCheckBox);
+                this.add(Box.createRigidArea(new Dimension(boxSize,0)));
+                this.add(secondCheckBox);
+                this.add(Box.createRigidArea(new Dimension(boxSize,0)));
+                this.add(thirdCheckBox);
             }
         }
     }
 
+    private class AtkSpellsPanel extends JPanel {
+        private InputFields nameFields;
+        private InputFields atkBonusFields;
+        private InputFields dmgTypeFields;
+
+        public AtkSpellsPanel() {
+            InitializePanel();
+            AddComponents();
+        }
+
+        private void InitializePanel() {
+            this.setLayout(new GridBagLayout());
+            this.setBorder(new BevelBorder(BevelBorder.LOWERED, null, null, null, null));
+        }
+
+        private void AddComponents() {
+            GridBagConstraints constraints = new GridBagConstraints();
+            constraints.weightx = 1; constraints.anchor = GridBagConstraints.LINE_START;
+            constraints.ipadx = 1;
+
+            nameFields = new InputFields("Name",3,20);
+            constraints.gridx = 0; constraints.gridy = 0;
+            this.add(nameFields, constraints);
+
+            atkBonusFields = new InputFields("Atk Bonus",3,3);
+            constraints.gridx = 1;
+            this.add(atkBonusFields, constraints);
+
+            dmgTypeFields = new InputFields("Damage/Type",3,5);
+            constraints.gridx = 2;
+            this.add(dmgTypeFields, constraints);
+
+            JLabel titleLabel = new JLabel("Attacks & Spellcasting");
+            titleLabel.setFont(CharacterSheetGUI.SectionTitleFont);
+            constraints.gridx = 0; constraints.gridy = 2;
+            constraints.anchor = GridBagConstraints.PAGE_END; constraints.gridwidth = 3;
+            this.add(titleLabel, constraints);
+
+        }
+        
+        private class InputFields extends JPanel{
+            List<JTextField> inputFields;
+            public InputFields(String labelText, int rowCount, int fieldColumns) {
+                InitializePanel();
+                AddComponents(labelText, rowCount, fieldColumns);
+            }
+
+            private void InitializePanel() {
+                this.setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
+            }
+
+            private void AddComponents(String labelText, int rowCount, int fieldColumns) {
+                JLabel headerLabel = new JLabel(labelText);
+                this.add(headerLabel);
+
+                inputFields = new ArrayList<>();
+
+                for (int row = 0; row < rowCount; row++) {
+                    JTextField inputField = new JTextField(fieldColumns);
+                    this.add(inputField);
+                    inputFields.add(inputField);
+                }
+            }
+        }
+    }
 
 }
