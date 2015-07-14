@@ -14,6 +14,8 @@ import java.io.File;
 import java.util.*;
 import java.util.List;
 import javax.swing.border.BevelBorder;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 
 
 public class CharacterSheetGUI extends JFrame {
@@ -26,6 +28,11 @@ public class CharacterSheetGUI extends JFrame {
     private final JFileChooser fileChooser = new JFileChooser();
 
 	private JPanel contentPane;
+    private HeaderPanel headerPanel;
+    private CharacterValuesHolder characterValuesHolder;
+    private CombatPanel combatPanel;
+    private TraitsPanel traitsPanel;
+
     private Character character;
     private DataHandler dataHandler;
 
@@ -53,10 +60,12 @@ public class CharacterSheetGUI extends JFrame {
         InitializeData();
         InitializeGUI();
         AddPanels();
+        UpdateAllFields();
 	}
 
     private void InitializeData() {
         this.dataHandler = new DataHandler();
+
 
         if (this.dataHandler.CheckSavedData()) {
             this.character = this.dataHandler.ReadData();
@@ -64,6 +73,11 @@ public class CharacterSheetGUI extends JFrame {
             this.character = new Character();
         }
     }
+
+    private void UpdateAllFields() {
+        headerPanel.UpdateFields();
+    }
+
     private void InitializeGUI() {
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         setBounds(0, 0, 1600, 900);
@@ -80,20 +94,20 @@ public class CharacterSheetGUI extends JFrame {
         JPanel holdingPanel = new JPanel(new GridBagLayout());
 
         constraints.weighty = 1; constraints.gridwidth = 3;
-        HeaderPanel headerPanel = new HeaderPanel();
+        headerPanel = new HeaderPanel(this);
         holdingPanel.add(headerPanel, constraints);
 
         constraints.weighty = 4; constraints.weightx = 1;
         constraints.gridwidth = 1; constraints.gridy = 1;
-        CharacterValuesHolder charValueHolder = new CharacterValuesHolder();
-        holdingPanel.add(charValueHolder, constraints);
+        characterValuesHolder = new CharacterValuesHolder();
+        holdingPanel.add(characterValuesHolder, constraints);
 
         constraints.gridx = 1;
-        CombatPanel combatPanel = new CombatPanel();
+        combatPanel = new CombatPanel();
         holdingPanel.add(combatPanel, constraints);
 
         constraints.gridx = 2;
-        TraitsPanel traitsPanel = new TraitsPanel();
+        traitsPanel = new TraitsPanel();
         holdingPanel.add(traitsPanel, constraints);
 
         // Scrollpane which holds the body of the form.
@@ -102,20 +116,18 @@ public class CharacterSheetGUI extends JFrame {
         contentPane.add(scrollPane, BorderLayout.CENTER);
 
         // Initialize top toolbar
-        contentPane.add(new ToolBar("Tools", this, dataHandler, character), BorderLayout.NORTH);
+        contentPane.add(new ToolBar("Tools", this, dataHandler), BorderLayout.NORTH);
     }
 
     private class ToolBar extends JToolBar implements ActionListener {
 
         private CharacterSheetGUI charGUI;
         private DataHandler dataHandler;
-        private Character character;
 
-        public ToolBar(String toolBarName, CharacterSheetGUI charGUI, DataHandler dataHandler, Character character) {
+        public ToolBar(String toolBarName, CharacterSheetGUI charGUI, DataHandler dataHandler) {
             super(toolBarName);
             this.charGUI = charGUI;
             this.dataHandler = dataHandler;
-            this.character = character;
 
             InitializeToolBar();
             AddButtons();
@@ -149,7 +161,8 @@ public class CharacterSheetGUI extends JFrame {
             }
             else if (ae.getActionCommand().equals("Load"))
             {
-                this.dataHandler.ReadData();
+                this.charGUI.character = this.dataHandler.ReadData();
+                this.charGUI.UpdateAllFields();
             }
             else if (ae.getActionCommand().equals("Import"))
             {
@@ -163,22 +176,25 @@ public class CharacterSheetGUI extends JFrame {
         }
     }
 
-    private class HeaderPanel extends JPanel {
+    private class HeaderPanel extends JPanel implements DocumentListener {
         // Goes at the top, contains character details panel
 
         private JTextField characterNameTextField;
         private CharacterDetailsPanel charDetailsPanel;
 
-        public HeaderPanel() {
+        private CharacterSheetGUI charGUI;
+
+        public HeaderPanel(CharacterSheetGUI charGUI) {
+            this.charGUI = charGUI;
             InitializePanel();
             AddComponents();
         }
 
-        void InitializePanel() {
+        private void InitializePanel() {
             this.setLayout(new GridBagLayout());
         }
 
-        void AddComponents() {
+        private void AddComponents() {
             GridBagConstraints constraints = new GridBagConstraints();
             constraints.weightx = 1;
             JLabel characterNameLabel = new JLabel("Character Name");
@@ -190,10 +206,43 @@ public class CharacterSheetGUI extends JFrame {
 
             Font charNameFont = new Font(Font.SANS_SERIF, Font.BOLD, 20);
             characterNameTextField.setFont(charNameFont);
+            characterNameTextField.setActionCommand("CharName");
+            characterNameTextField.getDocument().addDocumentListener(this);
 
             charDetailsPanel = new CharacterDetailsPanel();
             constraints.gridx = 2;
             this.add(charDetailsPanel, constraints);
+        }
+
+        public void UpdateFields() {
+            System.out.println("Updating Header");
+            System.out.println(this.charGUI.character.getCharacterName());
+            this.characterNameTextField.setText(this.charGUI.character.getCharacterName());
+        }
+
+        /*
+        public void actionPerformed(ActionEvent ae) {
+            System.out.println("ACTION");
+            if (ae.getActionCommand().equals("CharName")) {
+                System.out.println("Settin name");
+                this.character.setCharacterName(characterNameTextField.getText());
+            }
+        }
+        */
+
+        @Override
+        public void insertUpdate(DocumentEvent e) {
+            this.charGUI.character.setCharacterName(characterNameTextField.getText());
+        }
+
+        @Override
+        public void removeUpdate(DocumentEvent e) {
+            this.charGUI.character.setCharacterName(characterNameTextField.getText());
+        }
+
+        @Override
+        public void changedUpdate(DocumentEvent e) {
+            System.out.println("ACTION");
         }
 
         private class CharacterDetailsPanel extends JPanel {

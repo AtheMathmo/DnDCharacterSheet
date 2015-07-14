@@ -3,7 +3,6 @@ package engine;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 
 public class DataHandler {
 	
@@ -23,7 +22,7 @@ public class DataHandler {
 			out.writeObject(character);
 			out.close();
 			fileOut.close();
-			System.out.printf("Serialized data is saved in saveData.bin");
+			System.out.println("Serialized data is saved in saveData.bin");
 		}catch(IOException i)
 		{
 			i.printStackTrace();
@@ -50,6 +49,7 @@ public class DataHandler {
 			return null;
 		}
 
+        System.out.println(character.getCharacterName());
 		return character;
 	}
 
