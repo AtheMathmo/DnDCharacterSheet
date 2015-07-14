@@ -59,6 +59,7 @@ public class DataHandler {
 		System.out.println("Reading data.");
 
 		try {
+            character = new Character();
             character.setPlayerName("Imported");
 			Path filePath = file.toPath();
 			BufferedReader reader = Files.newBufferedReader(filePath);
