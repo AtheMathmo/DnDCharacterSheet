@@ -1,23 +1,34 @@
 package gui;
 
 import engine.Character;
+import engine.DataHandler;
 
 import java.awt.*;
 
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.File;
 import java.util.*;
 import java.util.List;
 import javax.swing.border.BevelBorder;
 
+
 public class CharacterSheetGUI extends JFrame {
     public static final Font SectionTitleFont = new Font(Font.SANS_SERIF,Font.BOLD, 18);
+
     public static final Border SectionBorder =  BorderFactory.createCompoundBorder(
             BorderFactory.createBevelBorder(BevelBorder.LOWERED),
     BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
+    private final JFileChooser fileChooser = new JFileChooser();
+
 	private JPanel contentPane;
+    private Character character;
+    private DataHandler dataHandler;
+
 
 	/**
 	 * Launch the application.
@@ -39,10 +50,20 @@ public class CharacterSheetGUI extends JFrame {
 	 * Create the frame.
 	 */
 	public CharacterSheetGUI() {
+        InitializeData();
         InitializeGUI();
         AddPanels();
 	}
 
+    private void InitializeData() {
+        this.dataHandler = new DataHandler();
+
+        if (this.dataHandler.CheckSavedData()) {
+            this.character = this.dataHandler.ReadData();
+        } else {
+            this.character = new Character();
+        }
+    }
     private void InitializeGUI() {
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         setBounds(0, 0, 1600, 900);
@@ -79,6 +100,67 @@ public class CharacterSheetGUI extends JFrame {
         JScrollPane scrollPane = new JScrollPane(holdingPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
                 JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         contentPane.add(scrollPane, BorderLayout.CENTER);
+
+        // Initialize top toolbar
+        contentPane.add(new ToolBar("Tools", this, dataHandler, character), BorderLayout.NORTH);
+    }
+
+    private class ToolBar extends JToolBar implements ActionListener {
+
+        private CharacterSheetGUI charGUI;
+        private DataHandler dataHandler;
+        private Character character;
+
+        public ToolBar(String toolBarName, CharacterSheetGUI charGUI, DataHandler dataHandler, Character character) {
+            super(toolBarName);
+            this.charGUI = charGUI;
+            this.dataHandler = dataHandler;
+            this.character = character;
+
+            InitializeToolBar();
+            AddButtons();
+        }
+
+        private void InitializeToolBar() {
+            this.setOrientation(JToolBar.HORIZONTAL);
+        }
+
+        private void AddButtons() {
+            Button saveButton = new Button("Save");
+            saveButton.setPreferredSize(new Dimension(100, 25));
+            saveButton.setActionCommand("Save"); saveButton.addActionListener(this);
+            this.add(saveButton);
+
+            Button loadButton = new Button("Load");
+            loadButton.setPreferredSize(new Dimension(100, 25));
+            loadButton.setActionCommand("Load"); loadButton.addActionListener(this);
+            this.add(loadButton);
+
+            Button importButton = new Button("Import");
+            importButton.setPreferredSize(new Dimension(100, 25));
+            importButton.setActionCommand("Import"); importButton.addActionListener(this);
+            this.add(importButton);
+        }
+
+        public void actionPerformed(ActionEvent ae) {
+            if (ae.getActionCommand().equals("Save"))
+            {
+                this.dataHandler.WriteData(character);
+            }
+            else if (ae.getActionCommand().equals("Load"))
+            {
+                this.dataHandler.ReadData();
+            }
+            else if (ae.getActionCommand().equals("Import"))
+            {
+                int returnVal = charGUI.fileChooser.showOpenDialog(charGUI.contentPane);
+
+                if (returnVal == JFileChooser.APPROVE_OPTION) {
+                    File file = fileChooser.getSelectedFile();
+                    this.dataHandler.ImportData(file);
+                }
+            }
+        }
     }
 
     private class HeaderPanel extends JPanel {
@@ -102,7 +184,7 @@ public class CharacterSheetGUI extends JFrame {
             JLabel characterNameLabel = new JLabel("Character Name");
             this.add(characterNameLabel,constraints);
 
-            characterNameTextField = new JTextField(7);
+            characterNameTextField = new JTextField(15);
             constraints.gridx = 1;
             this.add(characterNameTextField, constraints);
 

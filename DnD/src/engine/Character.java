@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class Character {
+public class Character implements java.io.Serializable {
 	
 	public enum Races {
 		Dwarf, Elf, Halfling, Human, DragonBorn, Gnome, HalfElf, HalfOrc, Tiefling
@@ -35,11 +35,212 @@ public class Character {
 			return name;
 		}
 	}
-	
+
+	//region Getters and Setters
+	public String getPlayerName() {
+		return playerName;
+	}
+
+	public void setPlayerName(String playerName) {
+		this.playerName = playerName;
+	}
+
+	public String getCharacterName() {
+		return characterName;
+	}
+
+	public void setCharacterName(String characterName) {
+		this.characterName = characterName;
+	}
+
+	public String getSize() {
+		return size;
+	}
+
+	public void setSize(String size) {
+		this.size = size;
+	}
+
+	public Boolean getIsMale() {
+		return isMale;
+	}
+
+	public void setIsMale(Boolean isMale) {
+		this.isMale = isMale;
+	}
+
+	public Classes getDndClass() {
+		return dndClass;
+	}
+
+	public void setDndClass(Classes dndClass) {
+		this.dndClass = dndClass;
+	}
+
+	public Races getRace() {
+		return race;
+	}
+
+	public void setRace(Races race) {
+		this.race = race;
+	}
+
+	public Character.Alignment getAlignment() {
+		return Alignment;
+	}
+
+	public void setAlignment(Character.Alignment alignment) {
+		Alignment = alignment;
+	}
+
+	public ArrayList<String> getClassFeatures() {
+		return classFeatures;
+	}
+
+	public void setClassFeatures(ArrayList<String> classFeatures) {
+		this.classFeatures = classFeatures;
+	}
+
+	public ArrayList<String> getRaceFeatures() {
+		return raceFeatures;
+	}
+
+	public void setRaceFeatures(ArrayList<String> raceFeatures) {
+		this.raceFeatures = raceFeatures;
+	}
+
+	public int getExperiencePoints() {
+		return experiencePoints;
+	}
+
+	public void setExperiencePoints(int experiencePoints) {
+		this.experiencePoints = experiencePoints;
+	}
+
+	public int getLevel() {
+		return level;
+	}
+
+	public void setLevel(int level) {
+		this.level = level;
+	}
+
+	public int getStrength() {
+		return strength;
+	}
+
+	public void setStrength(int strength) {
+		this.strength = strength;
+	}
+
+	public int getDexterity() {
+		return dexterity;
+	}
+
+	public void setDexterity(int dexterity) {
+		this.dexterity = dexterity;
+	}
+
+	public int getConstitution() {
+		return constitution;
+	}
+
+	public void setConstitution(int constitution) {
+		this.constitution = constitution;
+	}
+
+	public int getIntelligence() {
+		return intelligence;
+	}
+
+	public void setIntelligence(int intelligence) {
+		this.intelligence = intelligence;
+	}
+
+	public int getWisdom() {
+		return wisdom;
+	}
+
+	public void setWisdom(int wisdom) {
+		this.wisdom = wisdom;
+	}
+
+	public int getCharisma() {
+		return charisma;
+	}
+
+	public void setCharisma(int charisma) {
+		this.charisma = charisma;
+	}
+
+	public ArrayList<Spell> getSpells() {
+		return spells;
+	}
+
+	public void setSpells(ArrayList<Spell> spells) {
+		this.spells = spells;
+	}
+
+	public int getMaxHitPoints() {
+		return maxHitPoints;
+	}
+
+	public void setMaxHitPoints(int maxHitPoints) {
+		this.maxHitPoints = maxHitPoints;
+	}
+
+	public int getCurrentHitPoints() {
+		return currentHitPoints;
+	}
+
+	public void setCurrentHitPoints(int currentHitPoints) {
+		this.currentHitPoints = currentHitPoints;
+	}
+
+	public int getTemporaryHitPoints() {
+		return temporaryHitPoints;
+	}
+
+	public void setTemporaryHitPoints(int temporaryHitPoints) {
+		this.temporaryHitPoints = temporaryHitPoints;
+	}
+
+	public int getArmorClass() {
+		return armorClass;
+	}
+
+	public void setArmorClass(int armorClass) {
+		this.armorClass = armorClass;
+	}
+
+	public int getInitiative() {
+		return initiative;
+	}
+
+	public void setInitiative(int initiative) {
+		this.initiative = initiative;
+	}
+
+	public int getSpeed() {
+		return speed;
+	}
+
+	public void setSpeed(int speed) {
+		this.speed = speed;
+	}
+
+	public Boolean[][] getDeathSaves() {
+		return deathSaves;
+	}
+
+	public void setDeathSaves(Boolean[][] deathSaves) {
+		this.deathSaves = deathSaves;
+	}
+	//endregion s
+
 	// User name
 	private String playerName;
 
-	
 	// Character details
 	private String characterName;
 	private String size;
@@ -67,8 +268,7 @@ public class Character {
 	
 	public Character()
 	{
-		Spell test = new Spell();
-		test.setAtkBonus(1);
+
 	}
 	
 	
