@@ -49,7 +49,6 @@ public class DataHandler {
 			return null;
 		}
 
-        System.out.println(character.getCharacterName());
 		return character;
 	}
 

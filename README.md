@@ -5,4 +5,9 @@ Currently swing layout is not very flexible with resizing.
 
 Requested features:
 
-- Drop down box to select number of skills/attacks.
+- 
+
+Implementation Details:
+
+- Need to create custom document filters for different input fields.
+- Leave traits to be custom entered, allows for more freedom.

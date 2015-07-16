@@ -93,20 +93,44 @@ public class Character implements java.io.Serializable {
 		Alignment = alignment;
 	}
 
-	public ArrayList<String> getClassFeatures() {
-		return classFeatures;
+	public String getPersonalityTraits() {
+		return personalityTraits;
 	}
 
-	public void setClassFeatures(ArrayList<String> classFeatures) {
-		this.classFeatures = classFeatures;
+	public void setPersonalityTraits(String personalityTraits) {
+		this.personalityTraits = personalityTraits;
 	}
 
-	public ArrayList<String> getRaceFeatures() {
-		return raceFeatures;
+	public String getIdeals() {
+		return ideals;
 	}
 
-	public void setRaceFeatures(ArrayList<String> raceFeatures) {
-		this.raceFeatures = raceFeatures;
+	public void setIdeals(String ideals) {
+		this.ideals = ideals;
+	}
+
+	public String getBonds() {
+		return bonds;
+	}
+
+	public void setBonds(String bonds) {
+		this.bonds = bonds;
+	}
+
+	public String getFlaws() {
+		return flaws;
+	}
+
+	public void setFlaws(String flaws) {
+		this.flaws = flaws;
+	}
+
+	public String getFeatureTraits() {
+		return featureTraits;
+	}
+
+	public void setFeatureTraits(String featureTraits) {
+		this.featureTraits = featureTraits;
 	}
 
 	public int getExperiencePoints() {
@@ -236,20 +260,35 @@ public class Character implements java.io.Serializable {
 	public void setDeathSaves(Boolean[][] deathSaves) {
 		this.deathSaves = deathSaves;
 	}
-	//endregion s
+
+	public String getBackground() {
+		return background;
+	}
+
+	public void setBackground(String background) {
+		this.background = background;
+	}
+	//endregion
 
 	// User name
 	private String playerName;
 
 	// Character details
 	private String characterName;
+	private String background;
 	private String size;
 	private Boolean isMale;
 	private Classes dndClass;
 	private Races race;
 	private Alignment Alignment;
-	private ArrayList<String> classFeatures;
-	private ArrayList<String> raceFeatures;
+
+	// Trait boxes
+	private String personalityTraits;
+	private String ideals;
+	private String bonds;
+	private String flaws;
+	private String featureTraits;
+
 	// Progress
 	private int experiencePoints;
 	private int level;
