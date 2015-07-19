@@ -11,14 +11,13 @@ import javax.swing.border.EmptyBorder;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
-import java.text.NumberFormat;
 import java.util.*;
 import java.util.List;
 import javax.swing.border.BevelBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
-import javax.swing.text.DefaultStyledDocument;
-import javax.swing.text.NumberFormatter;
+import javax.swing.text.AbstractDocument;
+import javax.swing.text.JTextComponent;
 
 public class CharacterSheetGUI extends JFrame {
     public static final Font SectionTitleFont = new Font(Font.SANS_SERIF, Font.BOLD, 18);
@@ -37,6 +36,17 @@ public class CharacterSheetGUI extends JFrame {
 
     private Character character;
     private DataHandler dataHandler;
+
+    public int GetSignedIntValue(String signedString) {
+        if (signedString.length() < 2)
+        {
+            return 0;
+        }
+
+        boolean isPositive = signedString.startsWith("+");
+        int integerValue = Integer.parseInt(signedString.substring(1));
+        return isPositive ? integerValue : -integerValue;
+    }
 
 
     /**
@@ -100,14 +110,14 @@ public class CharacterSheetGUI extends JFrame {
 
         constraints.weighty = 1;
         constraints.gridwidth = 3;
-        headerPanel = new HeaderPanel(this);
+        headerPanel = new HeaderPanel();
         holdingPanel.add(headerPanel, constraints);
 
         constraints.weighty = 4;
         constraints.weightx = 1;
         constraints.gridwidth = 1;
         constraints.gridy = 1;
-        characterValuesHolder = new CharacterValuesHolder(this);
+        characterValuesHolder = new CharacterValuesHolder();
         holdingPanel.add(characterValuesHolder, constraints);
 
         constraints.gridx = 1;
@@ -115,7 +125,7 @@ public class CharacterSheetGUI extends JFrame {
         holdingPanel.add(combatPanel, constraints);
 
         constraints.gridx = 2;
-        traitsPanel = new TraitsPanel(this);
+        traitsPanel = new TraitsPanel();
         holdingPanel.add(traitsPanel, constraints);
 
         // Scrollpane which holds the body of the form.
@@ -124,17 +134,15 @@ public class CharacterSheetGUI extends JFrame {
         contentPane.add(scrollPane, BorderLayout.CENTER);
 
         // Initialize top toolbar
-        contentPane.add(new ToolBar("Tools", this, dataHandler), BorderLayout.NORTH);
+        contentPane.add(new ToolBar("Tools",  dataHandler), BorderLayout.NORTH);
     }
 
     private class ToolBar extends JToolBar implements ActionListener {
 
-        private CharacterSheetGUI charGUI;
         private DataHandler dataHandler;
 
-        public ToolBar(String toolBarName, CharacterSheetGUI charGUI, DataHandler dataHandler) {
+        public ToolBar(String toolBarName, DataHandler dataHandler) {
             super(toolBarName);
-            this.charGUI = charGUI;
             this.dataHandler = dataHandler;
 
             InitializeToolBar();
@@ -169,10 +177,10 @@ public class CharacterSheetGUI extends JFrame {
             if (ae.getActionCommand().equals("Save")) {
                 this.dataHandler.WriteData(character);
             } else if (ae.getActionCommand().equals("Load")) {
-                this.charGUI.character = this.dataHandler.ReadData();
-                this.charGUI.UpdateAllFields();
+                character = this.dataHandler.ReadData();
+                UpdateAllFields();
             } else if (ae.getActionCommand().equals("Import")) {
-                int returnVal = charGUI.fileChooser.showOpenDialog(charGUI.contentPane);
+                int returnVal = fileChooser.showOpenDialog(contentPane);
 
                 if (returnVal == JFileChooser.APPROVE_OPTION) {
                     File file = fileChooser.getSelectedFile();
@@ -188,10 +196,7 @@ public class CharacterSheetGUI extends JFrame {
         private JTextField characterNameTextField;
         private CharacterDetailsPanel charDetailsPanel;
 
-        private CharacterSheetGUI charGUI;
-
-        public HeaderPanel(CharacterSheetGUI charGUI) {
-            this.charGUI = charGUI;
+        public HeaderPanel() {
             InitializePanel();
             AddComponents();
         }
@@ -215,26 +220,26 @@ public class CharacterSheetGUI extends JFrame {
             characterNameTextField.getDocument().putProperty("owner", characterNameTextField);
             characterNameTextField.getDocument().addDocumentListener(this);
 
-            charDetailsPanel = new CharacterDetailsPanel(this.charGUI);
+            charDetailsPanel = new CharacterDetailsPanel();
             constraints.gridx = 2;
             this.add(charDetailsPanel, constraints);
         }
 
         public void UpdateFields() {
-            this.characterNameTextField.setText(this.charGUI.character.getCharacterName());
+            this.characterNameTextField.setText(character.getCharacterName());
             this.charDetailsPanel.UpdateFields();
         }
 
         @Override
         public void insertUpdate(DocumentEvent e) {
             Object owner = e.getDocument().getProperty("owner");
-            this.charGUI.character.setCharacterName(((JTextField) owner).getText());
+            character.setCharacterName(((JTextField) owner).getText());
         }
 
         @Override
         public void removeUpdate(DocumentEvent e) {
             Object owner = e.getDocument().getProperty("owner");
-            this.charGUI.character.setCharacterName(((JTextField) owner).getText());
+            character.setCharacterName(((JTextField) owner).getText());
         }
 
         @Override
@@ -244,8 +249,6 @@ public class CharacterSheetGUI extends JFrame {
 
         private class CharacterDetailsPanel extends JPanel implements DocumentListener {
             // Goes within header - contains character information
-
-            private CharacterSheetGUI charGUI;
             private JComboBox<Character.Classes> classDropDown;
             private JTextField backgroundTextField;
             private JTextField playerNameTextField;
@@ -253,8 +256,7 @@ public class CharacterSheetGUI extends JFrame {
             private JComboBox<Character.Alignment> alignmentDropDown;
             private JFormattedTextField expPointsTextField;
 
-            public CharacterDetailsPanel(CharacterSheetGUI charGUI) {
-                this.charGUI = charGUI;
+            public CharacterDetailsPanel() {
                 InitializePanel();
                 AddComponents();
             }
@@ -272,7 +274,7 @@ public class CharacterSheetGUI extends JFrame {
 
                 classDropDown = new JComboBox<>(Character.Classes.values());
                 classDropDown.addActionListener((ActionEvent e) ->
-                        charGUI.character.setDndClass((Character.Classes) classDropDown.getSelectedItem()));
+                        character.setDndClass((Character.Classes) classDropDown.getSelectedItem()));
 
                 this.add(classDropDown, constraints);
 
@@ -309,7 +311,7 @@ public class CharacterSheetGUI extends JFrame {
 
                 raceDropDown = new JComboBox<>(Character.Races.values());
                 raceDropDown.addActionListener((ActionEvent e) ->
-                        charGUI.character.setRace((Character.Races) raceDropDown.getSelectedItem()));
+                        character.setRace((Character.Races) raceDropDown.getSelectedItem()));
                 raceDropDown.setPreferredSize(backgroundTextField.getPreferredSize());
                 constraints.gridx = 1;
                 this.add(raceDropDown, constraints);
@@ -320,7 +322,7 @@ public class CharacterSheetGUI extends JFrame {
 
                 alignmentDropDown = new JComboBox<>(Character.Alignment.values());
                 alignmentDropDown.addActionListener((ActionEvent e) ->
-                        charGUI.character.setAlignment((Character.Alignment) alignmentDropDown.getSelectedItem()));
+                        character.setAlignment((Character.Alignment) alignmentDropDown.getSelectedItem()));
                 alignmentDropDown.setPreferredSize(backgroundTextField.getPreferredSize());
 
                 constraints.gridx = 3;
@@ -330,32 +332,29 @@ public class CharacterSheetGUI extends JFrame {
                 constraints.gridx = 4;
                 this.add(expPointsLabel, constraints);
 
-                // Create formatter for expPoints
-                NumberFormat numberFormat = NumberFormat.getInstance();
-                numberFormat.setGroupingUsed(false);
-                NumberFormatter formatter = new NumberFormatter(numberFormat);
-                formatter.setValueClass(Integer.class);
-                formatter.setMinimum(0);
-                formatter.setMaximum(Integer.MAX_VALUE);
-                formatter.setAllowsInvalid(false);
-
                 // Create exp text field
-                expPointsTextField = new JFormattedTextField(formatter);
+                expPointsTextField = new JFormattedTextField();
                 expPointsTextField.setPreferredSize(backgroundTextField.getPreferredSize());
-                expPointsTextField.getDocument().addDocumentListener(this);
-                expPointsTextField.getDocument().putProperty("owner", expPointsTextField);
-                expPointsTextField.getDocument().putProperty("charValue", "ExpPoints");
+                AbstractDocument expPointsDoc = ((AbstractDocument) expPointsTextField.getDocument());
+                expPointsDoc.addDocumentListener(this);
+                expPointsDoc.putProperty("owner", expPointsTextField);
+                expPointsDoc.putProperty("charValue", "ExpPoints");
+
+                NumericalFilter numFilter = new NumericalFilter();
+                numFilter.setMinValue(0);
+                expPointsDoc.setDocumentFilter(numFilter);
+
                 constraints.gridx = 5;
                 this.add(expPointsTextField, constraints);
             }
 
             public void UpdateFields() {
-                this.classDropDown.setSelectedItem(this.charGUI.character.getDndClass());
-                this.backgroundTextField.setText(this.charGUI.character.getBackground());
-                this.playerNameTextField.setText(this.charGUI.character.getPlayerName());
-                this.raceDropDown.setSelectedItem(this.charGUI.character.getRace());
-                this.alignmentDropDown.setSelectedItem(this.charGUI.character.getAlignment());
-                this.expPointsTextField.setText(Integer.toString(this.charGUI.character.getExperiencePoints()));
+                this.classDropDown.setSelectedItem(character.getDndClass());
+                this.backgroundTextField.setText(character.getBackground());
+                this.playerNameTextField.setText(character.getPlayerName());
+                this.raceDropDown.setSelectedItem(character.getRace());
+                this.alignmentDropDown.setSelectedItem(character.getAlignment());
+                this.expPointsTextField.setText(Integer.toString(character.getExperiencePoints()));
             }
 
             @Override
@@ -379,14 +378,14 @@ public class CharacterSheetGUI extends JFrame {
 
                 switch (charValue) {
                     case "Background":
-                        this.charGUI.character.setBackground(owner.getText());
+                        character.setBackground(owner.getText());
                         break;
                     case "PlayerName":
-                        this.charGUI.character.setPlayerName(owner.getText());
+                        character.setPlayerName(owner.getText());
                         break;
                     case "ExpPoints":
                         try {
-                            this.charGUI.character.setExperiencePoints(Integer.parseInt(owner.getText()));
+                            character.setExperiencePoints(Integer.parseInt(owner.getText()));
                         } catch (NumberFormatException ex) {
                             Toolkit.getDefaultToolkit().beep();
                         }
@@ -411,10 +410,7 @@ public class CharacterSheetGUI extends JFrame {
 
         private JTextArea profAndLangTextArea;
 
-        private CharacterSheetGUI charGUI;
-
-        public CharacterValuesHolder(CharacterSheetGUI charGUI) {
-            this.charGUI = charGUI;
+        public CharacterValuesHolder() {
 
             this.InitializePanel();
             this.AddComponents();
@@ -426,7 +422,7 @@ public class CharacterSheetGUI extends JFrame {
 
         private void AddComponents() {
             GridBagConstraints constraints = new GridBagConstraints();
-            attrPanel = new AttributePanel(this.charGUI);
+            attrPanel = new AttributePanel();
 
             constraints.gridx = 0;
             constraints.gridy = 0;
@@ -527,11 +523,7 @@ public class CharacterSheetGUI extends JFrame {
             private AttributeBox wisBox;
             private AttributeBox chaBox;
 
-            private CharacterSheetGUI charGUI;
-
-            public AttributePanel(CharacterSheetGUI charGUI) {
-                this.charGUI = charGUI;
-
+            public AttributePanel() {
                 this.InitializePanel();
                 this.AddComponents();
             }
@@ -571,11 +563,69 @@ public class CharacterSheetGUI extends JFrame {
                 this.add(chaBox);
             }
 
-            public void UpdateFields() {
-
+            private void SetAttributeByName(String attrName, int newValue) {
+                switch(attrName) {
+                    case "Strength":
+                        character.setStrength(newValue);
+                        break;
+                    case "StrengthBonus":
+                        character.setStrBonus(newValue);
+                        break;
+                    case "Dexterity":
+                        character.setDexterity(newValue);
+                        break;
+                    case "DexterityBonus":
+                        character.setDexBonus(newValue);
+                        break;
+                    case "Constitution":
+                        character.setConstitution(newValue);
+                        break;
+                    case "ConstitutionBonus":
+                        character.setConBonus(newValue);
+                        break;
+                    case "Intelligence":
+                        character.setIntelligence(newValue);
+                        break;
+                    case "IntelligenceBonus":
+                        character.setIntBonus(newValue);
+                        break;
+                    case "Wisdom":
+                        character.setWisdom(newValue);
+                        break;
+                    case "WisdomBonus":
+                        character.setWisBonus(newValue);
+                        break;
+                    case "Charisma":
+                        character.setCharisma(newValue);
+                        break;
+                    case "CharismaBonus":
+                        character.setChaBonus(newValue);
+                    default:
+                        break;
+                }
             }
 
-            private class AttributeBox extends JPanel {
+            public void UpdateFields() {
+                strBox.attrField.setText(Integer.toString(character.getStrength()));
+                strBox.attrArea.setText(Integer.toString(character.getStrBonus()));
+
+                dexBox.attrField.setText(Integer.toString(character.getDexterity()));
+                dexBox.attrArea.setText(Integer.toString(character.getDexBonus()));
+
+                conBox.attrField.setText(Integer.toString(character.getConstitution()));
+                conBox.attrArea.setText(Integer.toString(character.getConBonus()));
+
+                intBox.attrField.setText(Integer.toString(character.getIntelligence()));
+                intBox.attrArea.setText(Integer.toString(character.getIntBonus()));
+
+                wisBox.attrField.setText(Integer.toString(character.getWisdom()));
+                wisBox.attrArea.setText(Integer.toString(character.getWisBonus()));
+
+                chaBox.attrField.setText(Integer.toString(character.getCharisma()));
+                chaBox.attrArea.setText(Integer.toString(character.getChaBonus()));
+            }
+
+            private class AttributeBox extends JPanel implements DocumentListener {
                 private String attrString;
 
                 private JTextArea attrArea;
@@ -605,32 +655,77 @@ public class CharacterSheetGUI extends JFrame {
                     attrArea.setOpaque(false);
                     constraints.gridy = 1;
 
+                    AbstractDocument areaDoc = (AbstractDocument) attrArea.getDocument();
+                    NumericalFilter signedFilter = new NumericalFilter();
+                    signedFilter.setNeedsSign(true); signedFilter.setMaxCharacters(3);
+                    areaDoc.setDocumentFilter(signedFilter);
+
+                    areaDoc.putProperty("owner", attrArea);
+                    areaDoc.putProperty("attribute", this.attrString.concat("Bonus"));
+                    areaDoc.addDocumentListener(this);
+
                     Font attrFont = new Font(Font.SANS_SERIF, Font.BOLD, 38);
                     attrArea.setFont(attrFont);
                     this.add(attrArea, constraints);
 
                     attrField = new JTextField((3));
+                    AbstractDocument fieldDoc = (AbstractDocument) attrField.getDocument();
+                    NumericalFilter numFilter = new NumericalFilter();
+                    numFilter.setMinValue(0);
+                    fieldDoc.setDocumentFilter(numFilter);
+
+                    fieldDoc.putProperty("owner", attrField);
+                    fieldDoc.putProperty("attribute", this.attrString);
+                    fieldDoc.addDocumentListener(this);
+
                     constraints.gridy = 2;
                     this.add(attrField, constraints);
                 }
 
-                public void UpdateField(String area, String field) {
-                    this.attrArea.setText(area);
-                    this.attrField.setText(field);
+                public void UpdateField(String areaBody, String fieldBody) {
+                    this.attrArea.setText(areaBody);
+                    this.attrField.setText(fieldBody);
+                }
+
+                @Override
+                public void insertUpdate(DocumentEvent e) {
+
+                    JTextComponent ownerField = (JTextComponent) e.getDocument().getProperty("owner");
+                    String attributeName = (String) e.getDocument().getProperty("attribute");
+
+                    // Bonus fields are signed
+                    if (attributeName.endsWith("Bonus"))
+                    {
+                        SetAttributeByName(attributeName, GetSignedIntValue(ownerField.getText()));
+                    }
+                    else {
+                        SetAttributeByName(attributeName, Integer.parseInt(ownerField.getText()));
+                    }
 
                 }
 
+                @Override
+                public void removeUpdate(DocumentEvent e) {
+
+                }
+
+                @Override
+                public void changedUpdate(DocumentEvent e) {
+
+                }
             }
         }
 
-        private class CheckBoxPanel extends JPanel {
+        private class CheckBoxPanel extends JPanel implements ActionListener {
 
             private String labelText;
             private JCheckBox checkBox;
             private JTextField textField;
+            private JLabel label;
 
             public CheckBoxPanel(String labelText) {
                 this.labelText = labelText;
+
                 this.InitializePanel();
                 this.AddComponents();
             }
@@ -643,15 +738,59 @@ public class CharacterSheetGUI extends JFrame {
                 checkBox = new JCheckBox();
                 this.add(checkBox);
                 checkBox.setSelected(false);
+                checkBox.setActionCommand("ticked");
+                checkBox.addActionListener(this);
 
                 textField = new JTextField();
                 this.add(textField);
                 textField.setColumns(3);
-                textField.setMaximumSize(textField.getPreferredSize());
-                textField.setMinimumSize(textField.getPreferredSize());
 
-                JLabel label = new JLabel(labelText);
+                AbstractDocument fieldDoc = (AbstractDocument) textField.getDocument();
+                NumericalFilter signedFilter = new NumericalFilter();
+                signedFilter.setNeedsSign(true); signedFilter.setMaxCharacters(3);
+                fieldDoc.setDocumentFilter(signedFilter);
+                fieldDoc.putProperty("charAttr", labelText);
+
+                // Has to work with skills and saving throw fields
+                fieldDoc.addDocumentListener(new DocumentListener() {
+                    @Override
+                    public void insertUpdate(DocumentEvent e) {
+
+                    }
+
+                    @Override
+                    public void removeUpdate(DocumentEvent e) {
+
+                    }
+
+                    @Override
+                    public void changedUpdate(DocumentEvent e) {
+
+                    }
+                });
+
+                label = new JLabel(labelText);
                 this.add(label);
+            }
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (e.getActionCommand().equals("ticked")) {
+                    Font defaultFieldFont = UIManager.getLookAndFeelDefaults().getFont("TextField.font");
+                    Font defaultLabelFont = UIManager.getLookAndFeelDefaults().getFont("Label.font");
+
+                    if (checkBox.isSelected()) {
+                        // Probably some java way to make these shared through each inner class instance.
+                        Font boldFieldFont = new Font(defaultFieldFont.getFontName(), Font.BOLD, defaultFieldFont.getSize());
+                        Font boldLabelFont = new Font(defaultLabelFont.getFontName(), Font.BOLD, defaultLabelFont.getSize());
+
+                        textField.setFont(boldFieldFont);
+                        label.setFont(boldLabelFont);
+                    } else {
+                        textField.setFont(defaultFieldFont);
+                        label.setFont(defaultLabelFont);
+                    }
+                }
             }
         }
 
@@ -1051,6 +1190,14 @@ public class CharacterSheetGUI extends JFrame {
                         JTextField inputField = new JTextField(fieldColumns);
                         this.add(inputField);
                         inputFields.add(inputField);
+
+                        if (labelText.equals("Atk Bonus")) {
+                            NumericalFilter signedFilter = new NumericalFilter();
+                            signedFilter.setMaxCharacters(4);
+                            signedFilter.setNeedsSign(true);
+
+                            ((AbstractDocument) inputField.getDocument()).setDocumentFilter(signedFilter);
+                        }
                     }
                 }
             }
@@ -1163,11 +1310,7 @@ public class CharacterSheetGUI extends JFrame {
         private TitleUnderTextArea flawsArea;
         private TitleUnderTextArea featAndTraitsArea;
 
-        private CharacterSheetGUI charGUI;
-
-        public TraitsPanel(CharacterSheetGUI charGUI) {
-            this.charGUI = charGUI;
-
+        public TraitsPanel() {
             this.InitializePanel();
             this.AddComponents();
         }
@@ -1178,11 +1321,11 @@ public class CharacterSheetGUI extends JFrame {
         }
 
         private void AddComponents() {
-            personalityTraitsArea = new TitleUnderTextArea(this.charGUI, "Personality Traits", 6, 25);
-            idealsArea = new TitleUnderTextArea(this.charGUI, "Ideals", 5, 25);
-            bondsArea = new TitleUnderTextArea(this.charGUI, "Bonds", 5, 25);
-            flawsArea = new TitleUnderTextArea(this.charGUI, "Flaws", 5, 25);
-            featAndTraitsArea = new TitleUnderTextArea(this.charGUI, "Features & Traits", 10, 25);
+            personalityTraitsArea = new TitleUnderTextArea("Personality Traits", 6, 25);
+            idealsArea = new TitleUnderTextArea("Ideals", 5, 25);
+            bondsArea = new TitleUnderTextArea("Bonds", 5, 25);
+            flawsArea = new TitleUnderTextArea("Flaws", 5, 25);
+            featAndTraitsArea = new TitleUnderTextArea("Features & Traits", 10, 25);
 
             this.add(personalityTraitsArea);
             this.add(idealsArea);
@@ -1192,11 +1335,11 @@ public class CharacterSheetGUI extends JFrame {
         }
 
         public void UpdateFields() {
-            this.personalityTraitsArea.setTextBody(this.charGUI.character.getPersonalityTraits());
-            this.idealsArea.setTextBody(this.charGUI.character.getIdeals());
-            this.bondsArea.setTextBody(this.charGUI.character.getBonds());
-            this.flawsArea.setTextBody(this.charGUI.character.getFlaws());
-            this.featAndTraitsArea.setTextBody(this.charGUI.character.getFeatureTraits());
+            this.personalityTraitsArea.setTextBody(character.getPersonalityTraits());
+            this.idealsArea.setTextBody(character.getIdeals());
+            this.bondsArea.setTextBody(character.getBonds());
+            this.flawsArea.setTextBody(character.getFlaws());
+            this.featAndTraitsArea.setTextBody(character.getFeatureTraits());
         }
 
         private class TitleUnderTextArea extends JPanel implements DocumentListener {
@@ -1206,11 +1349,8 @@ public class CharacterSheetGUI extends JFrame {
             }
 
             private JTextArea textArea;
-            private CharacterSheetGUI charGUI;
 
-            public TitleUnderTextArea(CharacterSheetGUI charGUI, String labelText, int rows, int cols) {
-                this.charGUI = charGUI;
-
+            public TitleUnderTextArea(String labelText, int rows, int cols) {
                 this.InitializePanel();
                 this.AddComponents(labelText, rows, cols);
             }
@@ -1226,12 +1366,12 @@ public class CharacterSheetGUI extends JFrame {
                 textArea.setMinimumSize(new Dimension(textArea.getPreferredSize()));
                 textArea.getDocument().addDocumentListener(this);
                 textArea.getDocument().putProperty("owner", textArea);
-                textArea.getDocument().putProperty("attribute", labelText);
+                textArea.getDocument().putProperty("trait", labelText);
 
-                JScrollPane profAndLangScrollPane = new JScrollPane(textArea);
-                profAndLangScrollPane.setHorizontalScrollBarPolicy(
+                JScrollPane scrollPane = new JScrollPane(textArea);
+                scrollPane.setHorizontalScrollBarPolicy(
                         ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
-                this.add(profAndLangScrollPane);
+                this.add(scrollPane);
 
                 JLabel label = new JLabel(labelText);
                 label.setFont(CharacterSheetGUI.SectionTitleFont);
@@ -1243,38 +1383,38 @@ public class CharacterSheetGUI extends JFrame {
 
             @Override
             public void insertUpdate(DocumentEvent e) {
-                SetCharAttribute(e);
+                SetCharTrait(e);
             }
 
             @Override
             public void removeUpdate(DocumentEvent e) {
-                SetCharAttribute(e);
+                SetCharTrait(e);
             }
 
             @Override
             public void changedUpdate(DocumentEvent e) {
-                SetCharAttribute(e);
+                SetCharTrait(e);
             }
 
-            private void SetCharAttribute(DocumentEvent e) {
+            private void SetCharTrait(DocumentEvent e) {
                 JTextArea textArea = (JTextArea) e.getDocument().getProperty("owner");
-                String attribute = (String) e.getDocument().getProperty("attribute");
+                String traits = (String) e.getDocument().getProperty("trait");
                 try {
-                    switch (attribute) {
+                    switch (traits) {
                         case "Personality Traits":
-                            this.charGUI.character.setPersonalityTraits(textArea.getText());
+                            character.setPersonalityTraits(textArea.getText());
                             break;
                         case "Ideals":
-                            this.charGUI.character.setIdeals(textArea.getText());
+                            character.setIdeals(textArea.getText());
                             break;
                         case "Bonds":
-                            this.charGUI.character.setBonds(textArea.getText());
+                            character.setBonds(textArea.getText());
                             break;
                         case "Flaws":
-                            this.charGUI.character.setFlaws(textArea.getText());
+                            character.setFlaws(textArea.getText());
                             break;
                         case "Features & Traits":
-                            this.charGUI.character.setFeatureTraits(textArea.getText());
+                            character.setFeatureTraits(textArea.getText());
                             break;
                         default:
                             throw new Exception("Label not set correctly");

@@ -197,6 +197,54 @@ public class Character implements java.io.Serializable {
 		this.charisma = charisma;
 	}
 
+	public int getStrBonus() {
+		return strBonus;
+	}
+
+	public void setStrBonus(int strBonus) {
+		this.strBonus = strBonus;
+	}
+
+	public int getDexBonus() {
+		return dexBonus;
+	}
+
+	public void setDexBonus(int dexBonus) {
+		this.dexBonus = dexBonus;
+	}
+
+	public int getConBonus() {
+		return conBonus;
+	}
+
+	public void setConBonus(int conBonus) {
+		this.conBonus = conBonus;
+	}
+
+	public int getIntBonus() {
+		return intBonus;
+	}
+
+	public void setIntBonus(int intBonus) {
+		this.intBonus = intBonus;
+	}
+
+	public int getWisBonus() {
+		return wisBonus;
+	}
+
+	public void setWisBonus(int wisBonus) {
+		this.wisBonus = wisBonus;
+	}
+
+	public int getChaBonus() {
+		return chaBonus;
+	}
+
+	public void setChaBonus(int chaBonus) {
+		this.chaBonus = chaBonus;
+	}
+
 	public ArrayList<Spell> getSpells() {
 		return spells;
 	}
@@ -295,6 +343,7 @@ public class Character implements java.io.Serializable {
 	
 	// Attributes
 	private int strength, dexterity, constitution, intelligence, wisdom, charisma;
+	private int strBonus,dexBonus, conBonus, intBonus, wisBonus, chaBonus;
 	
 	// Map from skills to levels.
 	private ArrayList<Spell> spells;
