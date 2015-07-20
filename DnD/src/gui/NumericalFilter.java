@@ -71,6 +71,11 @@ public class NumericalFilter extends DocumentFilter {
             return;
         }
 
+        // Update if it was entered without a sign
+        if (this.needsSign && offset == 0 && !(string.startsWith("+") || string.startsWith("-"))) {
+            string = "+".concat(string);
+        }
+
         super.insertString(fb, offset, string, attr);
 
     }

@@ -245,12 +245,12 @@ public class Character implements java.io.Serializable {
 		this.chaBonus = chaBonus;
 	}
 
-	public ArrayList<Spell> getSpells() {
-		return spells;
+	public String getAdditionalSpells() {
+		return additionalSpells;
 	}
 
-	public void setSpells(ArrayList<Spell> spells) {
-		this.spells = spells;
+	public void setAdditionalSpells(String additionalSpells) {
+		this.additionalSpells = additionalSpells;
 	}
 
 	public int getMaxHitPoints() {
@@ -309,6 +309,54 @@ public class Character implements java.io.Serializable {
 		this.deathSaves = deathSaves;
 	}
 
+	public int getCopper() {
+		return copper;
+	}
+
+	public void setCopper(int copper) {
+		this.copper = copper;
+	}
+
+	public int getSilver() {
+		return silver;
+	}
+
+	public void setSilver(int silver) {
+		this.silver = silver;
+	}
+
+	public int getElectrum() {
+		return electrum;
+	}
+
+	public void setElectrum(int electrum) {
+		this.electrum = electrum;
+	}
+
+	public int getGold() {
+		return gold;
+	}
+
+	public void setGold(int gold) {
+		this.gold = gold;
+	}
+
+	public int getPlatinum() {
+		return platinum;
+	}
+
+	public void setPlatinum(int platinum) {
+		this.platinum = platinum;
+	}
+
+	public String getEquipment() {
+		return equipment;
+	}
+
+	public void setEquipment(String equipment) {
+		this.equipment = equipment;
+	}
+
 	public String getBackground() {
 		return background;
 	}
@@ -345,11 +393,15 @@ public class Character implements java.io.Serializable {
 	private int strength, dexterity, constitution, intelligence, wisdom, charisma;
 	private int strBonus,dexBonus, conBonus, intBonus, wisBonus, chaBonus;
 	
-	// Map from skills to levels.
-	private ArrayList<Spell> spells;
+	// String for additional spells field
+	private String additionalSpells;
 	
 	// Combat
 	private int maxHitPoints, currentHitPoints, temporaryHitPoints, armorClass, initiative, speed;
+
+	// Equipment
+	private int copper, silver, electrum, gold, platinum;
+	private String equipment;
 	
 	// Array to store deathsave data.
 	private Boolean[][] deathSaves;

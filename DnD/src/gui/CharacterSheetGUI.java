@@ -90,6 +90,7 @@ public class CharacterSheetGUI extends JFrame {
         headerPanel.UpdateFields();
         characterValuesHolder.UpdateFields();
         traitsPanel.UpdateFields();
+        combatPanel.UpdateFields();
     }
 
     private void InitializeGUI() {
@@ -887,7 +888,7 @@ public class CharacterSheetGUI extends JFrame {
         }
     }
 
-    private class CombatPanel extends JPanel {
+    private class CombatPanel extends JPanel implements DocumentListener {
         private InCombatPanel inCombatPanel;
         private AtkSpellsPanel atkSpellsPanel;
         private EquipmentPanel equipmentPanel;
@@ -910,6 +911,76 @@ public class CharacterSheetGUI extends JFrame {
 
             equipmentPanel = new EquipmentPanel();
             this.add(equipmentPanel);
+        }
+
+        public void UpdateFields() {
+            equipmentPanel.UpdateFields();
+            inCombatPanel.UpdateFields();
+            atkSpellsPanel.UpdateFields();
+        }
+
+        @Override
+        public void insertUpdate(DocumentEvent e) {
+            SetCharacterProperty((AbstractDocument) e.getDocument());
+        }
+
+        @Override
+        public void removeUpdate(DocumentEvent e) {
+            SetCharacterProperty((AbstractDocument) e.getDocument());
+        }
+
+        @Override
+        public void changedUpdate(DocumentEvent e) {
+        }
+
+        private void SetCharacterProperty(AbstractDocument doc) {
+            JTextComponent textComponent = (JTextComponent) doc.getProperty("owner");
+            String property = (String) doc.getProperty("charProperty");
+
+            String textValue = textComponent.getText();
+            switch (property) {
+                case "Armor Class":
+                    if (textValue.length() > 0)
+                        character.setArmorClass(Integer.parseInt(textValue));
+                    else
+                        character.setArmorClass(0);
+                    break;
+                case "Initiative":
+                    if (textValue.length() > 0)
+                        character.setInitiative(GetSignedIntValue(textValue));
+                    else
+                        character.setInitiative(0);
+                    break;
+                case "Speed":
+                    if (textValue.length() > 0)
+                        character.setSpeed(Integer.parseInt(textValue));
+                    else
+                        character.setSpeed(0);
+                    break;
+                case "HPMax":
+                    if (textValue.length() > 0)
+                        character.setMaxHitPoints(Integer.parseInt(textValue));
+                    else
+                        character.setCurrentHitPoints(0);
+                    break;
+                case "Current Hit Points":
+                    if (textValue.length() > 0)
+                        character.setCurrentHitPoints(Integer.parseInt(textValue));
+                    else
+                        character.setCurrentHitPoints(0);
+                    break;
+                case "Temporary Hit Points":
+                    if (textValue.length() > 0)
+                        character.setTemporaryHitPoints(Integer.parseInt(textValue));
+                    else
+                        character.setTemporaryHitPoints(0);
+                    break;
+                case "Hit Dice":
+                    //TODO add hit dice property to character class
+                    break;
+                case "AdditionalSpells":
+                    character.setAdditionalSpells(textValue);
+            }
         }
 
         private class InCombatPanel extends JPanel {
@@ -941,18 +1012,24 @@ public class CharacterSheetGUI extends JFrame {
                 constraints.ipadx = 1;
                 constraints.ipady = 1;
 
+                NumericalFilter numFilter = new NumericalFilter();
+                numFilter.setMaxCharacters(3);
+
+                NumericalFilter signedFilter = new NumericalFilter();
+                signedFilter.setNeedsSign(true); signedFilter.setMaxCharacters(3);
+
                 // Armor, Initiative, Speed
-                armorClassPanel = new TextBoxOverLabel("Armor Class", 3);
+                armorClassPanel = new TextBoxOverLabel("Armor Class", 3, numFilter);
                 constraints.gridwidth = 2;
                 constraints.weightx = 1;
                 constraints.weighty = 1;
                 this.add(armorClassPanel, constraints);
 
-                initiativePanel = new TextBoxOverLabel("Initiative", 3);
+                initiativePanel = new TextBoxOverLabel("Initiative", 3, signedFilter);
                 constraints.gridx = 2;
                 this.add(initiativePanel, constraints);
 
-                speedPanel = new TextBoxOverLabel("Speed", 3);
+                speedPanel = new TextBoxOverLabel("Speed", 3, numFilter);
                 constraints.gridx = 4;
                 this.add(speedPanel, constraints);
 
@@ -968,11 +1045,18 @@ public class CharacterSheetGUI extends JFrame {
 
                 hpMaxTextField = new JTextField();
                 hpMaxTextField.setColumns(3);
+
+                AbstractDocument hpMaxDoc = (AbstractDocument) hpMaxTextField.getDocument();
+                hpMaxDoc.setDocumentFilter(numFilter);
+                hpMaxDoc.addDocumentListener(CombatPanel.this);
+                hpMaxDoc.putProperty("owner", hpMaxTextField);
+                hpMaxDoc.putProperty("charProperty","HPMax");
+
                 constraints.gridx = 1;
                 constraints.weightx = 1;
                 currentHPHolder.add(hpMaxTextField, constraints);
 
-                hpCurrentPanel = new TextBoxOverLabel("Current Hit Points", 7);
+                hpCurrentPanel = new TextBoxOverLabel("Current Hit Points", 7, numFilter);
                 constraints.gridx = 0;
                 constraints.gridy = 1;
                 constraints.gridwidth = 2;
@@ -982,7 +1066,7 @@ public class CharacterSheetGUI extends JFrame {
                 this.add(currentHPHolder, constraints);
 
                 // Temp HP
-                hpTempPanel = new TextBoxOverLabel("Temporary Hit Points", 7);
+                hpTempPanel = new TextBoxOverLabel("Temporary Hit Points", 7, numFilter);
                 constraints.gridx = 0;
                 constraints.gridy = 2;
                 this.add(hpTempPanel, constraints);
@@ -1003,7 +1087,7 @@ public class CharacterSheetGUI extends JFrame {
                 constraints.weightx = 1;
                 hitDiceHolder.add(hitDiceTotalTextField, constraints);
 
-                hitDicePanel = new TextBoxOverLabel("Hit Dice", 7);
+                hitDicePanel = new TextBoxOverLabel("Hit Dice", 7, null);
                 constraints.gridx = 0;
                 constraints.gridy = 1;
                 constraints.gridwidth = 2;
@@ -1039,12 +1123,22 @@ public class CharacterSheetGUI extends JFrame {
                 this.add(deathSaveHolder, constraints);
             }
 
+            public void UpdateFields() {
+                armorClassPanel.textField.setText(Integer.toString(character.getArmorClass()));
+                initiativePanel.textField.setText(Integer.toString(character.getInitiative()));
+                speedPanel.textField.setText(Integer.toString(character.getSpeed()));
+                hpCurrentPanel.textField.setText(Integer.toString(character.getCurrentHitPoints()));
+                hpTempPanel.textField.setText(Integer.toString(character.getTemporaryHitPoints()));
+
+                hpMaxTextField.setText(Integer.toString(character.getMaxHitPoints()));
+            }
+
             private class TextBoxOverLabel extends JPanel {
                 private JTextField textField;
 
-                public TextBoxOverLabel(String labelText, int cols) {
+                public TextBoxOverLabel(String labelText, int cols, NumericalFilter numFilter) {
                     this.InitializePanel();
-                    this.AddComponents(labelText, cols);
+                    this.AddComponents(labelText, cols, numFilter);
                 }
 
                 private void InitializePanel() {
@@ -1052,12 +1146,20 @@ public class CharacterSheetGUI extends JFrame {
                     this.setLayout(new GridBagLayout());
                 }
 
-                private void AddComponents(String labelText, int cols) {
+                private void AddComponents(String labelText, int cols, NumericalFilter numFilter) {
                     GridBagConstraints constraints = new GridBagConstraints();
                     constraints.fill = GridBagConstraints.NONE;
                     constraints.anchor = GridBagConstraints.CENTER;
                     this.textField = new JTextField();
                     this.textField.setColumns(cols);
+
+                    AbstractDocument fieldDoc = (AbstractDocument) this.textField.getDocument();
+                    fieldDoc.addDocumentListener(CombatPanel.this);
+                    if (numFilter != null) {
+                        fieldDoc.setDocumentFilter(numFilter);
+                    }
+                    fieldDoc.putProperty("owner", this.textField);
+                    fieldDoc.putProperty("charProperty", labelText);
 
                     constraints.gridx = 0;
                     constraints.gridy = 0;
@@ -1109,6 +1211,7 @@ public class CharacterSheetGUI extends JFrame {
         }
 
         private class AtkSpellsPanel extends JPanel {
+            //TODO Change from column based inputFields to row based. Then link to List property in character class.
             private InputFields nameFields;
             private InputFields atkBonusFields;
             private InputFields dmgTypeFields;
@@ -1144,9 +1247,14 @@ public class CharacterSheetGUI extends JFrame {
                 constraints.gridx = 2;
                 this.add(dmgTypeFields, constraints);
 
-                additionalSpellsArea = new JTextArea(4, 38);
+                additionalSpellsArea = new JTextArea(8, 38);
                 additionalSpellsArea.setLineWrap(true);
                 additionalSpellsArea.setWrapStyleWord(true);
+
+                AbstractDocument spellDoc = (AbstractDocument) additionalSpellsArea.getDocument();
+                spellDoc.addDocumentListener(CombatPanel.this);
+                spellDoc.putProperty("owner", additionalSpellsArea);
+                spellDoc.putProperty("charProperty", "AdditionalSpells");
 
                 JScrollPane spellsScrollPane = new JScrollPane(additionalSpellsArea);
                 spellsScrollPane.setHorizontalScrollBarPolicy(
@@ -1166,6 +1274,10 @@ public class CharacterSheetGUI extends JFrame {
                 constraints.gridwidth = 3;
                 this.add(titleLabel, constraints);
 
+            }
+
+            public void UpdateFields() {
+                additionalSpellsArea.setText(character.getAdditionalSpells());
             }
 
             private class InputFields extends JPanel {
@@ -1203,7 +1315,7 @@ public class CharacterSheetGUI extends JFrame {
             }
         }
 
-        private class EquipmentPanel extends JPanel {
+        private class EquipmentPanel extends JPanel implements DocumentListener {
 
             private JTextField copperPiecesField;
             private JTextField silverPiecesField;
@@ -1229,46 +1341,86 @@ public class CharacterSheetGUI extends JFrame {
                 constraints.gridy = 0;
                 constraints.anchor = GridBagConstraints.LINE_START;
 
+                NumericalFilter numFilter = new NumericalFilter();
+                numFilter.setMaxCharacters(2); numFilter.setMinValue(0);
+
                 JLabel cpLabel = new JLabel("CP");
+                this.add(cpLabel, constraints);
                 copperPiecesField = new JTextField();
                 copperPiecesField.setColumns(3);
-                this.add(cpLabel, constraints);
+
+                AbstractDocument copperDoc = (AbstractDocument) copperPiecesField.getDocument();
+                copperDoc.addDocumentListener(this);
+                copperDoc.putProperty("owner", copperPiecesField);
+                copperDoc.putProperty("equipment", "Copper");
+                copperDoc.setDocumentFilter(numFilter);
+
                 constraints.gridx = 1;
                 this.add(copperPiecesField, constraints);
 
                 constraints.gridx = 0;
                 constraints.gridy += 1;
                 JLabel spLabel = new JLabel("SP");
+                this.add(spLabel, constraints);
                 silverPiecesField = new JTextField();
                 silverPiecesField.setColumns(3);
-                this.add(spLabel, constraints);
+
+                AbstractDocument silverDoc = (AbstractDocument) silverPiecesField.getDocument();
+                silverDoc.addDocumentListener(this);
+                silverDoc.putProperty("owner", silverPiecesField);
+                silverDoc.putProperty("equipment", "Silver");
+                silverDoc.setDocumentFilter(numFilter);
+
                 constraints.gridx = 1;
                 this.add(silverPiecesField, constraints);
 
                 constraints.gridx = 0;
                 constraints.gridy += 1;
                 JLabel epLabel = new JLabel("EP");
+                this.add(epLabel, constraints);
                 electrumPiecesField = new JTextField();
                 electrumPiecesField.setColumns(3);
-                this.add(epLabel, constraints);
+
+                AbstractDocument electrumDoc = (AbstractDocument) electrumPiecesField.getDocument();
+                electrumDoc.addDocumentListener(this);
+                electrumDoc.putProperty("owner", electrumPiecesField);
+                electrumDoc.putProperty("equipment", "Electrum");
+                electrumDoc.setDocumentFilter(numFilter);
+
                 constraints.gridx = 1;
                 this.add(electrumPiecesField, constraints);
 
                 constraints.gridx = 0;
                 constraints.gridy += 1;
                 JLabel gpLabel = new JLabel("GP");
+                this.add(gpLabel, constraints);
                 goldPiecesField = new JTextField();
                 goldPiecesField.setColumns(3);
-                this.add(gpLabel, constraints);
+
+                AbstractDocument goldDoc = (AbstractDocument) goldPiecesField.getDocument();
+                goldDoc.addDocumentListener(this);
+                goldDoc.putProperty("owner", goldPiecesField);
+                goldDoc.putProperty("equipment", "Gold");
+                goldDoc.setDocumentFilter(numFilter);
+
                 constraints.gridx = 1;
                 this.add(goldPiecesField, constraints);
 
                 constraints.gridx = 0;
                 constraints.gridy += 1;
                 JLabel ppLabel = new JLabel("PP");
+                this.add(ppLabel, constraints);
+
                 platinumPiecesField = new JTextField();
                 platinumPiecesField.setColumns(3);
-                this.add(ppLabel, constraints);
+
+                AbstractDocument platinumDoc = (AbstractDocument) platinumPiecesField.getDocument();
+                platinumDoc.addDocumentListener(this);
+                platinumDoc.putProperty("owner", platinumPiecesField);
+                platinumDoc.putProperty("equipment", "Platinum");
+                NumericalFilter longNumfilter = new NumericalFilter();
+                platinumDoc.setDocumentFilter(longNumfilter);
+
                 constraints.gridx = 1;
                 this.add(platinumPiecesField, constraints);
 
@@ -1276,6 +1428,11 @@ public class CharacterSheetGUI extends JFrame {
                 equipmentArea.setLineWrap(true);
                 equipmentArea.setWrapStyleWord(true);
                 equipmentArea.setMinimumSize(new Dimension(equipmentArea.getPreferredSize()));
+
+                AbstractDocument equipmentDoc = (AbstractDocument) equipmentArea.getDocument();
+                equipmentDoc.addDocumentListener(this);
+                equipmentDoc.putProperty("owner", equipmentArea);
+                equipmentDoc.putProperty("equipment", "Equipment");
 
                 JScrollPane equipmentScrollPane = new JScrollPane(equipmentArea);
                 equipmentScrollPane.setHorizontalScrollBarPolicy(
@@ -1294,11 +1451,74 @@ public class CharacterSheetGUI extends JFrame {
                 constraints.gridwidth = 3;
                 constraints.anchor = GridBagConstraints.CENTER;
                 this.add(equipmentLabel, constraints);
+            }
 
+            public void UpdateFields() {
+                this.copperPiecesField.setText(Integer.toString(character.getCopper()));
+                this.silverPiecesField.setText(Integer.toString(character.getSilver()));
+                this.electrumPiecesField.setText(Integer.toString(character.getElectrum()));
+                this.goldPiecesField.setText(Integer.toString(character.getGold()));
+                this.platinumPiecesField.setText(Integer.toString(character.getPlatinum()));
+
+                this.equipmentArea.setText(character.getEquipment());
+            }
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                UpdateCharEquipment((AbstractDocument) e.getDocument());
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                UpdateCharEquipment((AbstractDocument) e.getDocument());
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
 
             }
 
+            private void UpdateCharEquipment(AbstractDocument doc) {
+                JTextComponent textComponent = (JTextComponent) doc.getProperty("owner");
+                String equipment = (String) doc.getProperty("equipment");
 
+                String fieldValue = textComponent.getText();
+
+                switch(equipment) {
+                    case "Copper":
+                        if (fieldValue.length() > 0)
+                            character.setCopper(Integer.parseInt(fieldValue));
+                        else
+                            character.setCopper(0);
+                        break;
+                    case "Silver":
+                        if (fieldValue.length() > 0)
+                            character.setSilver(Integer.parseInt(fieldValue));
+                        else
+                            character.setSilver(0);
+                        break;
+                    case "Electrum":
+                        if (fieldValue.length() > 0)
+                            character.setElectrum(Integer.parseInt(fieldValue));
+                        else
+                            character.setElectrum(0);
+                        break;
+                    case "Gold":
+                        if (fieldValue.length() > 0)
+                            character.setGold(Integer.parseInt(fieldValue));
+                        else
+                            character.setGold(0);
+                        break;
+                    case "Platinum":
+                        if (fieldValue.length() > 0)
+                            character.setPlatinum(Integer.parseInt(fieldValue));
+                        else
+                            character.setPlatinum(0);
+                        break;
+                    case "Equipment":
+                        character.setEquipment(fieldValue);
+                        break;
+                }
+            }
         }
     }
 
