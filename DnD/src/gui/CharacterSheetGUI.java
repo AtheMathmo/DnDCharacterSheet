@@ -1211,10 +1211,10 @@ public class CharacterSheetGUI extends JFrame {
         }
 
         private class AtkSpellsPanel extends JPanel {
-            //TODO Change from column based inputFields to row based. Then link to List property in character class.
-            private InputFields nameFields;
-            private InputFields atkBonusFields;
-            private InputFields dmgTypeFields;
+            //TODO Link inputFields to List property in character class. (Might need to restructure as list here).
+            private InputFields firstAttack;
+            private InputFields secondAttack;
+            private InputFields thirdAttack;
 
             private JTextArea additionalSpellsArea;
 
@@ -1232,20 +1232,16 @@ public class CharacterSheetGUI extends JFrame {
                 GridBagConstraints constraints = new GridBagConstraints();
                 constraints.weightx = 1;
                 constraints.anchor = GridBagConstraints.LINE_START;
-                constraints.ipadx = 1;
+                constraints.ipadx = 1; constraints.gridx = 0; constraints.gridy = 0;
 
-                nameFields = new InputFields("Name", 3, 20);
-                constraints.gridx = 0;
-                constraints.gridy = 0;
-                this.add(nameFields, constraints);
+                firstAttack = new InputFields(true);
+                secondAttack = new InputFields(false);
+                thirdAttack = new InputFields(false);
 
-                atkBonusFields = new InputFields("Atk Bonus", 3, 3);
-                constraints.gridx = 1;
-                this.add(atkBonusFields, constraints);
-
-                dmgTypeFields = new InputFields("Damage/Type", 3, 5);
-                constraints.gridx = 2;
-                this.add(dmgTypeFields, constraints);
+                constraints.gridwidth = 3;
+                this.add(firstAttack, constraints); constraints.gridy += 1;
+                this.add(secondAttack, constraints); constraints.gridy += 1;
+                this.add(thirdAttack, constraints); constraints.gridy += 1;
 
                 additionalSpellsArea = new JTextArea(8, 38);
                 additionalSpellsArea.setLineWrap(true);
@@ -1260,18 +1256,12 @@ public class CharacterSheetGUI extends JFrame {
                 spellsScrollPane.setHorizontalScrollBarPolicy(
                         ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
 
-                constraints.gridx = 0;
-                constraints.gridy = 2;
-                constraints.gridwidth = 3;
                 constraints.anchor = GridBagConstraints.CENTER;
-                this.add(spellsScrollPane, constraints);
+                this.add(spellsScrollPane, constraints); constraints.gridy += 1;
 
                 JLabel titleLabel = new JLabel("Attacks & Spellcasting");
                 titleLabel.setFont(CharacterSheetGUI.SectionTitleFont);
-                constraints.gridx = 0;
-                constraints.gridy = 3;
                 constraints.anchor = GridBagConstraints.PAGE_END;
-                constraints.gridwidth = 3;
                 this.add(titleLabel, constraints);
 
             }
@@ -1281,35 +1271,69 @@ public class CharacterSheetGUI extends JFrame {
             }
 
             private class InputFields extends JPanel {
-                List<JTextField> inputFields;
+                private JTextField nameField;
+                private JTextField attackBonusField;
+                private JTextField damageField;
 
-                public InputFields(String labelText, int rowCount, int fieldColumns) {
+                public InputFields(boolean hasHeader) {
                     InitializePanel();
-                    AddComponents(labelText, rowCount, fieldColumns);
+                    AddComponents(hasHeader);
                 }
 
                 private void InitializePanel() {
-                    this.setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
+                    this.setLayout(new GridBagLayout());
                 }
 
-                private void AddComponents(String labelText, int rowCount, int fieldColumns) {
-                    JLabel headerLabel = new JLabel(labelText);
-                    this.add(headerLabel);
+                private void AddComponents(boolean hasHeader) {
+                    GridBagConstraints constraints = new GridBagConstraints();
+                    constraints.weightx = 1; constraints.gridx = 0; constraints.gridy = 0;
+                    constraints.anchor = GridBagConstraints.LINE_START;
 
-                    inputFields = new ArrayList<>();
+                    if (hasHeader) {
+                        JLabel nameLabel = new JLabel("Name");
+                        JLabel dmgBonusLabel = new JLabel("Atk Bonus");
+                        JLabel damageTypeLabel = new JLabel("Damage/Type");
 
-                    for (int row = 0; row < rowCount; row++) {
-                        JTextField inputField = new JTextField(fieldColumns);
-                        this.add(inputField);
-                        inputFields.add(inputField);
+                        this.add(nameLabel, constraints);
+                        constraints.gridx += 1;
+                        this.add(dmgBonusLabel, constraints);
+                        constraints.gridx += 1;
+                        this.add(damageTypeLabel, constraints);
 
-                        if (labelText.equals("Atk Bonus")) {
-                            NumericalFilter signedFilter = new NumericalFilter();
-                            signedFilter.setMaxCharacters(4);
-                            signedFilter.setNeedsSign(true);
+                        constraints.gridy += 1; constraints.gridx = 0;
+                    }
 
-                            ((AbstractDocument) inputField.getDocument()).setDocumentFilter(signedFilter);
-                        }
+                    nameField = new JTextField(24);
+                    AbstractDocument nameDoc = (AbstractDocument) nameField.getDocument();
+                    nameDoc.addDocumentListener(CombatPanel.this);
+                    nameDoc.putProperty("owner", nameField);
+                    nameDoc.putProperty("charProperty", "AttackName");
+
+                    this.add(nameField, constraints);
+                    constraints.gridx += 1;
+
+                    attackBonusField = new JTextField(6);
+                    AbstractDocument atkBonusDoc = (AbstractDocument) attackBonusField.getDocument();
+                    atkBonusDoc.addDocumentListener(CombatPanel.this);
+                    atkBonusDoc.putProperty("owner", attackBonusField);
+                    atkBonusDoc.putProperty("charProperty", "AttackBonus");
+
+                    NumericalFilter signedFilter = new NumericalFilter();
+                    signedFilter.setMaxCharacters(3);
+                    signedFilter.setNeedsSign(true);
+                    atkBonusDoc.setDocumentFilter(signedFilter);
+
+                    this.add(attackBonusField, constraints);
+                    constraints.gridx += 1;
+
+                    damageField = new JTextField(8);
+                    AbstractDocument dmgDoc = (AbstractDocument) damageField.getDocument();
+                    dmgDoc.addDocumentListener(CombatPanel.this);
+                    dmgDoc.putProperty("owner", damageField);
+                    dmgDoc.putProperty("charProperty", "DamageType");
+
+                    this.add(damageField, constraints);
+
                     }
                 }
             }
@@ -1342,7 +1366,8 @@ public class CharacterSheetGUI extends JFrame {
                 constraints.anchor = GridBagConstraints.LINE_START;
 
                 NumericalFilter numFilter = new NumericalFilter();
-                numFilter.setMaxCharacters(2); numFilter.setMinValue(0);
+                numFilter.setMaxCharacters(2);
+                numFilter.setMinValue(0);
 
                 JLabel cpLabel = new JLabel("CP");
                 this.add(cpLabel, constraints);
@@ -1462,6 +1487,7 @@ public class CharacterSheetGUI extends JFrame {
 
                 this.equipmentArea.setText(character.getEquipment());
             }
+
             @Override
             public void insertUpdate(DocumentEvent e) {
                 UpdateCharEquipment((AbstractDocument) e.getDocument());
@@ -1483,7 +1509,7 @@ public class CharacterSheetGUI extends JFrame {
 
                 String fieldValue = textComponent.getText();
 
-                switch(equipment) {
+                switch (equipment) {
                     case "Copper":
                         if (fieldValue.length() > 0)
                             character.setCopper(Integer.parseInt(fieldValue));
@@ -1520,7 +1546,6 @@ public class CharacterSheetGUI extends JFrame {
                 }
             }
         }
-    }
 
     private class TraitsPanel extends JPanel {
 
