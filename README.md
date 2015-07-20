@@ -9,5 +9,5 @@ Requested features:
 
 Implementation Details:
 
-- Need to create custom document filters for different input fields.
-- Leave traits to be custom entered, allows for more freedom.
+- Need to link up remaining fields to save functionality.
+- Need to play with save/load buttons to allow file browsing (like import with locations retained).
