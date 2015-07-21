@@ -10,6 +10,8 @@ import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.io.File;
 import java.util.*;
 import java.util.List;
@@ -717,7 +719,7 @@ public class CharacterSheetGUI extends JFrame {
             }
         }
 
-        private class CheckBoxPanel extends JPanel implements ActionListener {
+        private class CheckBoxPanel extends JPanel implements ItemListener {
 
             private String labelText;
             private JCheckBox checkBox;
@@ -739,8 +741,7 @@ public class CharacterSheetGUI extends JFrame {
                 checkBox = new JCheckBox();
                 this.add(checkBox);
                 checkBox.setSelected(false);
-                checkBox.setActionCommand("ticked");
-                checkBox.addActionListener(this);
+                checkBox.addItemListener(this);
 
                 textField = new JTextField();
                 this.add(textField);
@@ -775,13 +776,13 @@ public class CharacterSheetGUI extends JFrame {
             }
 
             @Override
-            public void actionPerformed(ActionEvent e) {
-                if (e.getActionCommand().equals("ticked")) {
+            public void itemStateChanged(ItemEvent e) {
                     Font defaultFieldFont = UIManager.getLookAndFeelDefaults().getFont("TextField.font");
                     Font defaultLabelFont = UIManager.getLookAndFeelDefaults().getFont("Label.font");
 
-                    if (checkBox.isSelected()) {
+                    if (e.getStateChange() == ItemEvent.SELECTED) {
                         // Probably some java way to make these shared through each inner class instance.
+                        //TODO add to upper class to share through all checkboxes.
                         Font boldFieldFont = new Font(defaultFieldFont.getFontName(), Font.BOLD, defaultFieldFont.getSize());
                         Font boldLabelFont = new Font(defaultLabelFont.getFontName(), Font.BOLD, defaultLabelFont.getSize());
 
@@ -791,12 +792,11 @@ public class CharacterSheetGUI extends JFrame {
                         textField.setFont(defaultFieldFont);
                         label.setFont(defaultLabelFont);
                     }
-                }
             }
         }
 
         private class SavingThrowsPanel extends JPanel {
-
+            //TODO add ItemListener for check boxes. Extend to other checkboxes.
             private CheckBoxPanel strCheckBox;
             private CheckBoxPanel dexCheckBox;
             private CheckBoxPanel conCheckBox;
@@ -938,6 +938,7 @@ public class CharacterSheetGUI extends JFrame {
             String property = (String) doc.getProperty("charProperty");
 
             String textValue = textComponent.getText();
+            int rowNum;
             switch (property) {
                 case "Armor Class":
                     if (textValue.length() > 0)
@@ -980,6 +981,20 @@ public class CharacterSheetGUI extends JFrame {
                     break;
                 case "AdditionalSpells":
                     character.setAdditionalSpells(textValue);
+                    break;
+                case "AttackName":
+                    rowNum = (int) doc.getProperty("rowNum");
+                    character.getAttacks()[rowNum].setAttackName(textValue);
+                    break;
+                case "AttackBonus":
+                    rowNum = (int) doc.getProperty("rowNum");
+                    character.getAttacks()[rowNum].setAtkBonus(GetSignedIntValue(textValue));
+                    break;
+                case "DamageType":
+                    rowNum = (int) doc.getProperty("rowNum");
+                    character.getAttacks()[rowNum].setDamageType(textValue);
+                    break;
+
             }
         }
 
@@ -1211,7 +1226,6 @@ public class CharacterSheetGUI extends JFrame {
         }
 
         private class AtkSpellsPanel extends JPanel {
-            //TODO Link inputFields to List property in character class. (Might need to restructure as list here).
             private InputFields firstAttack;
             private InputFields secondAttack;
             private InputFields thirdAttack;
@@ -1234,9 +1248,9 @@ public class CharacterSheetGUI extends JFrame {
                 constraints.anchor = GridBagConstraints.LINE_START;
                 constraints.ipadx = 1; constraints.gridx = 0; constraints.gridy = 0;
 
-                firstAttack = new InputFields(true);
-                secondAttack = new InputFields(false);
-                thirdAttack = new InputFields(false);
+                firstAttack = new InputFields(0);
+                secondAttack = new InputFields(1);
+                thirdAttack = new InputFields(2);
 
                 constraints.gridwidth = 3;
                 this.add(firstAttack, constraints); constraints.gridy += 1;
@@ -1267,6 +1281,18 @@ public class CharacterSheetGUI extends JFrame {
             }
 
             public void UpdateFields() {
+                firstAttack.nameField.setText(character.getAttacks()[0].getAttackName());
+                secondAttack.nameField.setText(character.getAttacks()[1].getAttackName());
+                thirdAttack.nameField.setText(character.getAttacks()[2].getAttackName());
+
+                firstAttack.attackBonusField.setText(Integer.toString(character.getAttacks()[0].getAtkBonus()));
+                secondAttack.attackBonusField.setText(Integer.toString(character.getAttacks()[1].getAtkBonus()));
+                thirdAttack.attackBonusField.setText(Integer.toString(character.getAttacks()[2].getAtkBonus()));
+
+                firstAttack.damageField.setText(character.getAttacks()[0].getDamageType());
+                secondAttack.damageField.setText(character.getAttacks()[1].getDamageType());
+                thirdAttack.damageField.setText(character.getAttacks()[2].getDamageType());
+
                 additionalSpellsArea.setText(character.getAdditionalSpells());
             }
 
@@ -1275,21 +1301,21 @@ public class CharacterSheetGUI extends JFrame {
                 private JTextField attackBonusField;
                 private JTextField damageField;
 
-                public InputFields(boolean hasHeader) {
+                public InputFields(int rowNumber) {
                     InitializePanel();
-                    AddComponents(hasHeader);
+                    AddComponents(rowNumber);
                 }
 
                 private void InitializePanel() {
                     this.setLayout(new GridBagLayout());
                 }
 
-                private void AddComponents(boolean hasHeader) {
+                private void AddComponents(int rowNumber) {
                     GridBagConstraints constraints = new GridBagConstraints();
                     constraints.weightx = 1; constraints.gridx = 0; constraints.gridy = 0;
                     constraints.anchor = GridBagConstraints.LINE_START;
 
-                    if (hasHeader) {
+                    if (rowNumber == 0) {
                         JLabel nameLabel = new JLabel("Name");
                         JLabel dmgBonusLabel = new JLabel("Atk Bonus");
                         JLabel damageTypeLabel = new JLabel("Damage/Type");
@@ -1308,6 +1334,7 @@ public class CharacterSheetGUI extends JFrame {
                     nameDoc.addDocumentListener(CombatPanel.this);
                     nameDoc.putProperty("owner", nameField);
                     nameDoc.putProperty("charProperty", "AttackName");
+                    nameDoc.putProperty("rowNum", rowNumber);
 
                     this.add(nameField, constraints);
                     constraints.gridx += 1;
@@ -1317,6 +1344,7 @@ public class CharacterSheetGUI extends JFrame {
                     atkBonusDoc.addDocumentListener(CombatPanel.this);
                     atkBonusDoc.putProperty("owner", attackBonusField);
                     atkBonusDoc.putProperty("charProperty", "AttackBonus");
+                    atkBonusDoc.putProperty("rowNum", rowNumber);
 
                     NumericalFilter signedFilter = new NumericalFilter();
                     signedFilter.setMaxCharacters(3);
@@ -1331,6 +1359,7 @@ public class CharacterSheetGUI extends JFrame {
                     dmgDoc.addDocumentListener(CombatPanel.this);
                     dmgDoc.putProperty("owner", damageField);
                     dmgDoc.putProperty("charProperty", "DamageType");
+                    dmgDoc.putProperty("rowNum", rowNumber);
 
                     this.add(damageField, constraints);
 

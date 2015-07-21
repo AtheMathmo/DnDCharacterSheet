@@ -301,6 +301,10 @@ public class Character implements java.io.Serializable {
 		this.speed = speed;
 	}
 
+	public Attack[] getAttacks() {
+		return attacks;
+	}
+
 	public Boolean[][] getDeathSaves() {
 		return deathSaves;
 	}
@@ -398,6 +402,8 @@ public class Character implements java.io.Serializable {
 	
 	// Combat
 	private int maxHitPoints, currentHitPoints, temporaryHitPoints, armorClass, initiative, speed;
+
+	private Attack[] attacks = new Attack[] { new Attack(), new Attack(), new Attack() };
 
 	// Equipment
 	private int copper, silver, electrum, gold, platinum;
