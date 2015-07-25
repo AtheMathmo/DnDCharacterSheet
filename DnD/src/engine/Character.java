@@ -310,6 +310,14 @@ public class Character implements java.io.Serializable {
 		this.passiveWisdom = passiveWisdom;
 	}
 
+	public String getProfAndLang() {
+		return ProfAndLang;
+	}
+
+	public void setProfAndLang(String profAndLang) {
+		ProfAndLang = profAndLang;
+	}
+
 	public String getAdditionalSpells() {
 		return additionalSpells;
 	}
@@ -470,6 +478,8 @@ public class Character implements java.io.Serializable {
 	private int inspiration;
 	private int passiveWisdom;
 	private int proficiencyBonus;
+
+	private String ProfAndLang = "";
 	
 	// String for additional spells field
 	private String additionalSpells = "";

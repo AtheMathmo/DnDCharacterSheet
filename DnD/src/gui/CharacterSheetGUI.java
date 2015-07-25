@@ -503,6 +503,11 @@ public class CharacterSheetGUI extends JFrame {
             profAndLangTextArea.setWrapStyleWord(true);
             profAndLangTextArea.setMinimumSize(new Dimension(profAndLangTextArea.getPreferredSize()));
 
+            AbstractDocument langDoc = (AbstractDocument) profAndLangTextArea.getDocument();
+            langDoc.addDocumentListener(this);
+            langDoc.putProperty("owner", profAndLangTextArea);
+            langDoc.putProperty("charAttr","ProfAndLang");
+
             JScrollPane profAndLangScrollPane = new JScrollPane(profAndLangTextArea);
             profAndLangScrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
             bottomHoldingPanel.add(profAndLangScrollPane);
@@ -521,6 +526,8 @@ public class CharacterSheetGUI extends JFrame {
             inspirationInputBox.inputBox.setText(Integer.toString(character.getInspiration()));
             proficiencyBonus.inputBox.setText(Integer.toString(character.getProficiencyBonus()));
             passiveWisInputBox.inputBox.setText(Integer.toString(character.getPassiveWisdom()));
+
+            profAndLangTextArea.setText(character.getProfAndLang());
         }
 
         private void SetCharacterPropertyByName(AbstractDocument e) {
@@ -528,7 +535,12 @@ public class CharacterSheetGUI extends JFrame {
             String charAttr = (String) e.getProperty("charAttr");
 
             String textValue = textComp.getText();
-            int signedValue = GetSignedIntValue(textValue);
+            int signedValue = 0;
+
+            //TODO Quite hacky
+            if (!charAttr.equals("ProfAndLang")) {
+                signedValue = GetSignedIntValue(textValue);
+            }
             switch (charAttr) {
                 case "StrengthThrow":
                     character.setThrowBonusByIndex(0,signedValue);
@@ -564,6 +576,9 @@ public class CharacterSheetGUI extends JFrame {
                     } else {
                         character.setPassiveWisdom(0);
                     }
+                    break;
+                case "ProfAndLang":
+                    character.setProfAndLang(textValue);
                     break;
                 default:
                     try {
