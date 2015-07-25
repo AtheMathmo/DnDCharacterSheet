@@ -401,7 +401,7 @@ public class CharacterSheetGUI extends JFrame {
         }
     }
 
-    private class CharacterValuesHolder extends JPanel {
+    private class CharacterValuesHolder extends JPanel implements DocumentListener {
         // Contains panels for attributes, skills, saving throws etc.
         private AttributePanel attrPanel;
         private SavingThrowsPanel savingThrowsPanel;
@@ -412,6 +412,11 @@ public class CharacterSheetGUI extends JFrame {
         private InputBox passiveWisInputBox;
 
         private JTextArea profAndLangTextArea;
+
+        private final Font defaultFieldFont = UIManager.getLookAndFeelDefaults().getFont("TextField.font");
+        private final Font defaultLabelFont = UIManager.getLookAndFeelDefaults().getFont("Label.font");
+        private final Font boldFieldFont = new Font(defaultFieldFont.getFontName(), Font.BOLD, defaultFieldFont.getSize());
+        private final Font boldLabelFont = new Font(defaultLabelFont.getFontName(), Font.BOLD, defaultLabelFont.getSize());
 
         public CharacterValuesHolder() {
 
@@ -489,6 +494,59 @@ public class CharacterSheetGUI extends JFrame {
 
         public void UpdateFields() {
             attrPanel.UpdateFields();
+            savingThrowsPanel.UpdateFields();
+            skillsPanel.UpdateFields();
+        }
+
+        private void SetCharacterPropertyByName(AbstractDocument e) {
+            JTextComponent textComp = (JTextComponent) e.getProperty("owner");
+            String charAttr = (String) e.getProperty("charAttr");
+
+            String textValue = textComp.getText();
+            int signedValue = GetSignedIntValue(textValue);
+            switch (charAttr) {
+                case "StrengthThrow":
+                    character.setThrowBonusByIndex(0,signedValue);
+                    break;
+                case "DexterityThrow":
+                    character.setThrowBonusByIndex(1,signedValue);
+                    break;
+                case "ConstitutionThrow":
+                    character.setThrowBonusByIndex(2,signedValue);
+                    break;
+                case "IntelligenceThrow":
+                    character.setThrowBonusByIndex(3,signedValue);
+                    break;
+                case "WisdomThrow":
+                    character.setThrowBonusByIndex(4,signedValue);
+                    break;
+                case "CharismaThrow":
+                    character.setThrowBonusByIndex(5,signedValue);
+                    break;
+                default:
+                    try {
+                        int skillIndex = Character.Skills.valueByLabel(charAttr).ordinal();
+                        character.setSkillBonusByIndex(skillIndex, signedValue);
+                    } catch (NullPointerException ne) {
+                        ne.printStackTrace();
+                    }
+                    break;
+            }
+        }
+
+        @Override
+        public void insertUpdate(DocumentEvent e) {
+            SetCharacterPropertyByName((AbstractDocument) e.getDocument());
+        }
+
+        @Override
+        public void removeUpdate(DocumentEvent e) {
+            SetCharacterPropertyByName((AbstractDocument) e.getDocument());
+        }
+
+        @Override
+        public void changedUpdate(DocumentEvent e) {
+            SetCharacterPropertyByName((AbstractDocument) e.getDocument());
         }
 
         private class InputBox extends JPanel {
@@ -518,7 +576,7 @@ public class CharacterSheetGUI extends JFrame {
             }
         }
 
-        private class AttributePanel extends JPanel {
+        private class AttributePanel extends JPanel implements DocumentListener {
             private AttributeBox strBox;
             private AttributeBox dexBox;
             private AttributeBox conBox;
@@ -628,7 +686,34 @@ public class CharacterSheetGUI extends JFrame {
                 chaBox.attrArea.setText(Integer.toString(character.getChaBonus()));
             }
 
-            private class AttributeBox extends JPanel implements DocumentListener {
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+
+                JTextComponent ownerField = (JTextComponent) e.getDocument().getProperty("owner");
+                String attributeName = (String) e.getDocument().getProperty("attribute");
+
+                // Bonus fields are signed
+                if (attributeName.endsWith("Bonus"))
+                {
+                    SetAttributeByName(attributeName, GetSignedIntValue(ownerField.getText()));
+                }
+                else {
+                    SetAttributeByName(attributeName, Integer.parseInt(ownerField.getText()));
+                }
+
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+
+            }
+
+            private class AttributeBox extends JPanel {
                 private String attrString;
 
                 private JTextArea attrArea;
@@ -665,7 +750,7 @@ public class CharacterSheetGUI extends JFrame {
 
                     areaDoc.putProperty("owner", attrArea);
                     areaDoc.putProperty("attribute", this.attrString.concat("Bonus"));
-                    areaDoc.addDocumentListener(this);
+                    areaDoc.addDocumentListener(AttributePanel.this);
 
                     Font attrFont = new Font(Font.SANS_SERIF, Font.BOLD, 38);
                     attrArea.setFont(attrFont);
@@ -679,124 +764,15 @@ public class CharacterSheetGUI extends JFrame {
 
                     fieldDoc.putProperty("owner", attrField);
                     fieldDoc.putProperty("attribute", this.attrString);
-                    fieldDoc.addDocumentListener(this);
+                    fieldDoc.addDocumentListener(AttributePanel.this);
 
                     constraints.gridy = 2;
                     this.add(attrField, constraints);
                 }
-
-                public void UpdateField(String areaBody, String fieldBody) {
-                    this.attrArea.setText(areaBody);
-                    this.attrField.setText(fieldBody);
-                }
-
-                @Override
-                public void insertUpdate(DocumentEvent e) {
-
-                    JTextComponent ownerField = (JTextComponent) e.getDocument().getProperty("owner");
-                    String attributeName = (String) e.getDocument().getProperty("attribute");
-
-                    // Bonus fields are signed
-                    if (attributeName.endsWith("Bonus"))
-                    {
-                        SetAttributeByName(attributeName, GetSignedIntValue(ownerField.getText()));
-                    }
-                    else {
-                        SetAttributeByName(attributeName, Integer.parseInt(ownerField.getText()));
-                    }
-
-                }
-
-                @Override
-                public void removeUpdate(DocumentEvent e) {
-
-                }
-
-                @Override
-                public void changedUpdate(DocumentEvent e) {
-
-                }
-            }
-        }
-
-        private class CheckBoxPanel extends JPanel implements ItemListener {
-
-            private String labelText;
-            private JCheckBox checkBox;
-            private JTextField textField;
-            private JLabel label;
-
-            public CheckBoxPanel(String labelText) {
-                this.labelText = labelText;
-
-                this.InitializePanel();
-                this.AddComponents();
-            }
-
-            private void InitializePanel() {
-                this.setLayout(new BoxLayout(this, BoxLayout.X_AXIS));
-            }
-
-            private void AddComponents() {
-                checkBox = new JCheckBox();
-                this.add(checkBox);
-                checkBox.setSelected(false);
-                checkBox.addItemListener(this);
-
-                textField = new JTextField();
-                this.add(textField);
-                textField.setColumns(3);
-
-                AbstractDocument fieldDoc = (AbstractDocument) textField.getDocument();
-                NumericalFilter signedFilter = new NumericalFilter();
-                signedFilter.setNeedsSign(true); signedFilter.setMaxCharacters(3);
-                fieldDoc.setDocumentFilter(signedFilter);
-                fieldDoc.putProperty("charAttr", labelText);
-
-                // Has to work with skills and saving throw fields
-                fieldDoc.addDocumentListener(new DocumentListener() {
-                    @Override
-                    public void insertUpdate(DocumentEvent e) {
-
-                    }
-
-                    @Override
-                    public void removeUpdate(DocumentEvent e) {
-
-                    }
-
-                    @Override
-                    public void changedUpdate(DocumentEvent e) {
-
-                    }
-                });
-
-                label = new JLabel(labelText);
-                this.add(label);
-            }
-
-            @Override
-            public void itemStateChanged(ItemEvent e) {
-                    Font defaultFieldFont = UIManager.getLookAndFeelDefaults().getFont("TextField.font");
-                    Font defaultLabelFont = UIManager.getLookAndFeelDefaults().getFont("Label.font");
-
-                    if (e.getStateChange() == ItemEvent.SELECTED) {
-                        // Probably some java way to make these shared through each inner class instance.
-                        //TODO add to upper class to share through all checkboxes.
-                        Font boldFieldFont = new Font(defaultFieldFont.getFontName(), Font.BOLD, defaultFieldFont.getSize());
-                        Font boldLabelFont = new Font(defaultLabelFont.getFontName(), Font.BOLD, defaultLabelFont.getSize());
-
-                        textField.setFont(boldFieldFont);
-                        label.setFont(boldLabelFont);
-                    } else {
-                        textField.setFont(defaultFieldFont);
-                        label.setFont(defaultLabelFont);
-                    }
             }
         }
 
         private class SavingThrowsPanel extends JPanel {
-            //TODO add ItemListener for check boxes. Extend to other checkboxes.
             private CheckBoxPanel strCheckBox;
             private CheckBoxPanel dexCheckBox;
             private CheckBoxPanel conCheckBox;
@@ -816,12 +792,12 @@ public class CharacterSheetGUI extends JFrame {
 
             private void AddComponents() {
                 GridBagConstraints constraints = new GridBagConstraints();
-                strCheckBox = new CheckBoxPanel("Strength");
-                dexCheckBox = new CheckBoxPanel("Dexterity");
-                conCheckBox = new CheckBoxPanel("Constitution");
-                intCheckBox = new CheckBoxPanel("Intelligence");
-                wisCheckBox = new CheckBoxPanel("Wisdom");
-                chaCheckBox = new CheckBoxPanel("Charisma");
+                strCheckBox = new CheckBoxPanel("Strength", "Throw");
+                dexCheckBox = new CheckBoxPanel("Dexterity", "Throw");
+                conCheckBox = new CheckBoxPanel("Constitution", "Throw");
+                intCheckBox = new CheckBoxPanel("Intelligence", "Throw");
+                wisCheckBox = new CheckBoxPanel("Wisdom", "Throw");
+                chaCheckBox = new CheckBoxPanel("Charisma", "Throw");
 
                 constraints.gridx = 0;
                 constraints.gridy = 0;
@@ -845,6 +821,25 @@ public class CharacterSheetGUI extends JFrame {
                 constraints.gridy += 1;
                 constraints.anchor = GridBagConstraints.CENTER;
                 this.add(savingThrowsLabel, constraints);
+            }
+
+            public void UpdateFields() {
+                int[] throwBonus = character.getThrowBonus();
+                strCheckBox.textField.setText(Integer.toString(throwBonus[0]));
+                dexCheckBox.textField.setText(Integer.toString(throwBonus[1]));
+                conCheckBox.textField.setText(Integer.toString(throwBonus[2]));
+                intCheckBox.textField.setText(Integer.toString(throwBonus[3]));
+                wisCheckBox.textField.setText(Integer.toString(throwBonus[4]));
+                chaCheckBox.textField.setText(Integer.toString(throwBonus[5]));
+
+                boolean[] proficiencies = character.getThrowProficiencies();
+                strCheckBox.checkBox.setSelected(proficiencies[0]);
+                dexCheckBox.checkBox.setSelected(proficiencies[1]);
+                conCheckBox.checkBox.setSelected(proficiencies[2]);
+                intCheckBox.checkBox.setSelected(proficiencies[3]);
+                wisCheckBox.checkBox.setSelected(proficiencies[4]);
+                chaCheckBox.checkBox.setSelected(proficiencies[5]);
+
             }
         }
 
@@ -871,7 +866,7 @@ public class CharacterSheetGUI extends JFrame {
                 constraints.anchor = GridBagConstraints.LINE_START;
 
                 for (Character.Skills skill : Character.Skills.values()) {
-                    CheckBoxPanel skillPanel = new CheckBoxPanel(skill.toString());
+                    CheckBoxPanel skillPanel = new CheckBoxPanel(skill.toString(),"");
                     skillPanelMap.put(skill, skillPanel);
                     constraints.gridy += 1;
                     this.add(skillPanel, constraints);
@@ -884,6 +879,101 @@ public class CharacterSheetGUI extends JFrame {
                 constraints.gridy += 1;
                 this.add(skillsLabel, constraints);
 
+            }
+
+            public void UpdateFields() {
+                boolean[] proficiencies = character.getSkillProficiencies();
+                int[] values = character.getSkillBonus();
+                for (Character.Skills skill : skillPanelMap.keySet()) {
+                    int index = skill.ordinal();
+                    skillPanelMap.get(skill).checkBox.setSelected(proficiencies[index]);
+                    skillPanelMap.get(skill).textField.setText(Integer.toString(values[index]));
+                }
+            }
+        }
+
+        private class CheckBoxPanel extends JPanel implements ItemListener {
+            private JCheckBox checkBox;
+            private JTextField textField;
+            private JLabel label;
+            private String identifier;
+
+            public CheckBoxPanel(String labelText, String suffix) {
+                this.InitializePanel();
+                this.AddComponents(labelText, suffix);
+            }
+
+            private void InitializePanel() {
+                this.setLayout(new BoxLayout(this, BoxLayout.X_AXIS));
+            }
+
+            private void AddComponents(String labelText, String suffix) {
+                checkBox = new JCheckBox();
+                this.add(checkBox);
+                checkBox.setSelected(false);
+                checkBox.addItemListener(this);
+
+                textField = new JTextField();
+                this.add(textField);
+                textField.setColumns(3);
+
+                AbstractDocument fieldDoc = (AbstractDocument) textField.getDocument();
+                NumericalFilter signedFilter = new NumericalFilter();
+                signedFilter.setNeedsSign(true); signedFilter.setMaxCharacters(3);
+                fieldDoc.setDocumentFilter(signedFilter);
+
+                this.identifier = labelText.concat(suffix);
+                fieldDoc.putProperty("charAttr", this.identifier);
+                fieldDoc.putProperty("owner",textField);
+
+                // Has to work with skills and saving throw fields
+                fieldDoc.addDocumentListener(CharacterValuesHolder.this);
+
+                label = new JLabel(labelText);
+                this.add(label);
+            }
+
+            private void SetProfByName(String name, boolean isProficient) {
+                switch (name) {
+                    case "StrengthThrow":
+                        character.setThrowProficienciesByIndex(0, isProficient);
+                        break;
+                    case "DexterityThrow":
+                        character.setThrowProficienciesByIndex(1, isProficient);
+                        break;
+                    case "ConstitutionThrow":
+                        character.setThrowProficienciesByIndex(2, isProficient);
+                        break;
+                    case "IntelligenceThrow":
+                        character.setThrowProficienciesByIndex(3, isProficient);
+                        break;
+                    case "WisdomThrow":
+                        character.setThrowProficienciesByIndex(4, isProficient);
+                        break;
+                    case "CharismaThrow":
+                        character.setThrowProficienciesByIndex(5, isProficient);
+                        break;
+                    default:
+                        try {
+                            int skillIndex = Character.Skills.valueByLabel(name).ordinal();
+                            character.setSkillProficienciesByIndex(skillIndex, isProficient);
+                        } catch(NullPointerException ne) {
+                            ne.printStackTrace();
+                        }
+                        break;
+                }
+            }
+            @Override
+            public void itemStateChanged(ItemEvent e) {
+                if (e.getStateChange() == ItemEvent.SELECTED) {
+                    textField.setFont(boldFieldFont);
+                    label.setFont(boldLabelFont);
+                    SetProfByName(this.identifier, true);
+                } else {
+                    textField.setFont(defaultFieldFont);
+                    label.setFont(defaultLabelFont);
+                    SetProfByName(this.identifier, false);
+                }
             }
         }
     }

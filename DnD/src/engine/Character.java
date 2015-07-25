@@ -25,14 +25,23 @@ public class Character implements java.io.Serializable {
 		Nature ("Nature (Int)"), Perception ("Perception (Wis)"), Performance ("Performance (Cha)"), Persuasion ("Persuasion (Cha)"),
 		Religion ("Religion (Int)"), SleightOfHand ("Sleight of Hand (Dex)"), Stealth ("Stealth (Dex)"), Survival ("Survival (Wis)");
 
-		private final String name;
+		private final String label;
 
 		Skills(String s) {
-			name = s;
+			label = s;
 		}
 
 		public String toString(){
-			return name;
+			return label;
+		}
+
+		public static Skills valueByLabel(String labelText) {
+			for (Skills skill : Skills.values()) {
+				if (skill.label.equals(labelText)) {
+					return skill;
+				}
+			}
+			return null;
 		}
 	}
 
@@ -245,6 +254,38 @@ public class Character implements java.io.Serializable {
 		this.chaBonus = chaBonus;
 	}
 
+	public int[] getSkillBonus() {
+		return skillBonus;
+	}
+
+	public void setSkillBonusByIndex(int index, int value) {
+		this.skillBonus[index] = value;
+	}
+
+	public boolean[] getThrowProficiencies() {
+		return throwProficiencies;
+	}
+
+	public void setThrowProficienciesByIndex(int index, boolean value) {
+		this.throwProficiencies[index] = value;
+	}
+
+	public int[] getThrowBonus() {
+		return throwBonus;
+	}
+
+	public void setThrowBonusByIndex(int index, int value) {
+		this.throwBonus[index] = value;
+	}
+
+	public boolean[] getSkillProficiencies() {
+		return skillProficiencies;
+	}
+
+	public void setSkillProficienciesByIndex(int index, boolean value) {
+		this.skillProficiencies[index] = value;
+	}
+
 	public String getAdditionalSpells() {
 		return additionalSpells;
 	}
@@ -396,6 +437,11 @@ public class Character implements java.io.Serializable {
 	// Attributes
 	private int strength, dexterity, constitution, intelligence, wisdom, charisma;
 	private int strBonus,dexBonus, conBonus, intBonus, wisBonus, chaBonus;
+
+	private boolean[] throwProficiencies = new boolean[6];
+	private int[] throwBonus = new int[6];
+	private boolean[] skillProficiencies = new boolean[Skills.values().length];
+	private int[] skillBonus = new int[Skills.values().length];
 	
 	// String for additional spells field
 	private String additionalSpells;
