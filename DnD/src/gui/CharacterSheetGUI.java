@@ -14,7 +14,6 @@ import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.io.File;
 import java.util.*;
-import java.util.List;
 import javax.swing.border.BevelBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
@@ -80,12 +79,12 @@ public class CharacterSheetGUI extends JFrame {
     private void InitializeData() {
         this.dataHandler = new DataHandler();
 
-
-        if (this.dataHandler.CheckSavedData()) {
-            this.character = this.dataHandler.ReadData();
-        } else {
-            this.character = new Character();
-        }
+        //TODO automatically check for last used file...
+        //if (this.dataHandler.CheckSavedData()) {
+            //this.character = this.dataHandler.ReadData();
+        //} else {
+        this.character = new Character();
+        //}
     }
 
     private void UpdateAllFields() {
@@ -178,13 +177,28 @@ public class CharacterSheetGUI extends JFrame {
 
         public void actionPerformed(ActionEvent ae) {
             if (ae.getActionCommand().equals("Save")) {
-                this.dataHandler.WriteData(character);
+                // Save file chooser
+                fileChooser.setSelectedFile(new File(character.getCharacterName().concat("Save.bin")));
+                int returnVal = fileChooser.showSaveDialog(contentPane);
+
+                // If selected we save the file
+                if (returnVal == JFileChooser.APPROVE_OPTION) {
+                    File saveFile = fileChooser.getSelectedFile();
+                    this.dataHandler.WriteData(character, saveFile);
+                }
             } else if (ae.getActionCommand().equals("Load")) {
-                character = this.dataHandler.ReadData();
-                UpdateAllFields();
-            } else if (ae.getActionCommand().equals("Import")) {
+                // Open file chooser
                 int returnVal = fileChooser.showOpenDialog(contentPane);
 
+                // If selected we read the file
+                if (returnVal == JFileChooser.APPROVE_OPTION) {
+                    File file = fileChooser.getSelectedFile();
+                    character = this.dataHandler.ReadData(file);
+                    UpdateAllFields();
+                }
+
+            } else if (ae.getActionCommand().equals("Import")) {
+                int returnVal = fileChooser.showOpenDialog(contentPane);
                 if (returnVal == JFileChooser.APPROVE_OPTION) {
                     File file = fileChooser.getSelectedFile();
                     this.dataHandler.ImportData(file);
@@ -194,7 +208,7 @@ public class CharacterSheetGUI extends JFrame {
     }
 
     private class HeaderPanel extends JPanel implements DocumentListener {
-        // Goes at the top, contains character details panel
+        //TODO add level!
 
         private JTextField characterNameTextField;
         private CharacterDetailsPanel charDetailsPanel;
@@ -444,13 +458,19 @@ public class CharacterSheetGUI extends JFrame {
             constraints.weightx = 1;
             this.add(rightHoldingPanel, constraints);
 
-            inspirationInputBox = new InputBox("Inspiration");
+            NumericalFilter numFilter = new NumericalFilter();
+            numFilter.setMaxCharacters(2);
+
+            NumericalFilter signedFilter = new NumericalFilter();
+            signedFilter.setNeedsSign(true); signedFilter.setMaxCharacters(3);
+
+            inspirationInputBox = new InputBox("Inspiration", numFilter);
             constraints.gridx = 0;
             constraints.gridy = 0;
             constraints.anchor = GridBagConstraints.LINE_START;
             rightHoldingPanel.add(inspirationInputBox, constraints);
 
-            proficiencyBonus = new InputBox("Proficiency Bonus");
+            proficiencyBonus = new InputBox("Proficiency Bonus", signedFilter);
             constraints.gridy += 1;
             rightHoldingPanel.add(proficiencyBonus, constraints);
 
@@ -474,7 +494,8 @@ public class CharacterSheetGUI extends JFrame {
             constraints.anchor = GridBagConstraints.CENTER;
             this.add(bottomHoldingPanel, constraints);
 
-            passiveWisInputBox = new InputBox("Passive Wisdom (Perception)");
+
+            passiveWisInputBox = new InputBox("Passive Wisdom (Perception)", numFilter);
             bottomHoldingPanel.add(passiveWisInputBox);
 
             profAndLangTextArea = new JTextArea(4, 20);
@@ -496,6 +517,10 @@ public class CharacterSheetGUI extends JFrame {
             attrPanel.UpdateFields();
             savingThrowsPanel.UpdateFields();
             skillsPanel.UpdateFields();
+
+            inspirationInputBox.inputBox.setText(Integer.toString(character.getInspiration()));
+            proficiencyBonus.inputBox.setText(Integer.toString(character.getProficiencyBonus()));
+            passiveWisInputBox.inputBox.setText(Integer.toString(character.getPassiveWisdom()));
         }
 
         private void SetCharacterPropertyByName(AbstractDocument e) {
@@ -522,6 +547,23 @@ public class CharacterSheetGUI extends JFrame {
                     break;
                 case "CharismaThrow":
                     character.setThrowBonusByIndex(5,signedValue);
+                    break;
+                case "Inspiration":
+                    if (textValue.length() > 0) {
+                        character.setInspiration(Integer.parseInt(textValue));
+                    } else {
+                        character.setInspiration(0);
+                    }
+                    break;
+                case "Proficiency Bonus":
+                    character.setProficiencyBonus(signedValue);
+                    break;
+                case "Passive Wisdom (Perception)":
+                    if (textValue.length() > 0) {
+                        character.setPassiveWisdom(Integer.parseInt(textValue));
+                    } else {
+                        character.setPassiveWisdom(0);
+                    }
                     break;
                 default:
                     try {
@@ -554,22 +596,28 @@ public class CharacterSheetGUI extends JFrame {
             private JTextField inputBox;
             private String labelText;
 
-            public InputBox(String labelText) {
+            public InputBox(String labelText, NumericalFilter filter) {
                 this.labelText = labelText;
 
                 InitializePanel();
-                AddComponents();
+                AddComponents(filter);
             }
 
             private void InitializePanel() {
                 this.setLayout(new BoxLayout(this, BoxLayout.X_AXIS));
             }
 
-            private void AddComponents() {
+            private void AddComponents(NumericalFilter filter) {
                 inputBox = new JTextField();
                 this.add(inputBox);
                 inputBox.setColumns(3);
                 inputBox.setMaximumSize(new Dimension(inputBox.getPreferredSize()));
+
+                AbstractDocument doc = (AbstractDocument) inputBox.getDocument();
+                doc.setDocumentFilter(filter);
+                doc.addDocumentListener(CharacterValuesHolder.this);
+                doc.putProperty("owner", inputBox);
+                doc.putProperty("charAttr", labelText);
 
                 JLabel boxLabel = new JLabel(labelText);
                 this.add(boxLabel);
@@ -1282,7 +1330,7 @@ public class CharacterSheetGUI extends JFrame {
             }
 
             private class DeathSaveCheckBoxesPanel extends JPanel {
-
+                //TODO link up to character class
                 private JCheckBox firstCheckBox;
                 private JCheckBox secondCheckBox;
                 private JCheckBox thirdCheckBox;

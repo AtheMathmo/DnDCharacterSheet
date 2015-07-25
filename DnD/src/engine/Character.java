@@ -286,6 +286,30 @@ public class Character implements java.io.Serializable {
 		this.skillProficiencies[index] = value;
 	}
 
+	public int getProficiencyBonus() {
+		return proficiencyBonus;
+	}
+
+	public void setProficiencyBonus(int proficiencyBonus) {
+		this.proficiencyBonus = proficiencyBonus;
+	}
+
+	public int getInspiration() {
+		return inspiration;
+	}
+
+	public void setInspiration(int inspiration) {
+		this.inspiration = inspiration;
+	}
+
+	public int getPassiveWisdom() {
+		return passiveWisdom;
+	}
+
+	public void setPassiveWisdom(int passiveWisdom) {
+		this.passiveWisdom = passiveWisdom;
+	}
+
 	public String getAdditionalSpells() {
 		return additionalSpells;
 	}
@@ -412,23 +436,23 @@ public class Character implements java.io.Serializable {
 	//endregion
 
 	// User name
-	private String playerName;
+	private String playerName = "";
 
 	// Character details
-	private String characterName;
-	private String background;
-	private String size;
+	private String characterName = "";
+	private String background = "";
+	private String size = "";
 	private Boolean isMale;
 	private Classes dndClass;
 	private Races race;
 	private Alignment Alignment;
 
 	// Trait boxes
-	private String personalityTraits;
-	private String ideals;
-	private String bonds;
-	private String flaws;
-	private String featureTraits;
+	private String personalityTraits = "";
+	private String ideals = "";
+	private String bonds = "";
+	private String flaws = "";
+	private String featureTraits = "";
 
 	// Progress
 	private int experiencePoints;
@@ -442,9 +466,13 @@ public class Character implements java.io.Serializable {
 	private int[] throwBonus = new int[6];
 	private boolean[] skillProficiencies = new boolean[Skills.values().length];
 	private int[] skillBonus = new int[Skills.values().length];
+
+	private int inspiration;
+	private int passiveWisdom;
+	private int proficiencyBonus;
 	
 	// String for additional spells field
-	private String additionalSpells;
+	private String additionalSpells = "";
 	
 	// Combat
 	private int maxHitPoints, currentHitPoints, temporaryHitPoints, armorClass, initiative, speed;
@@ -453,7 +481,7 @@ public class Character implements java.io.Serializable {
 
 	// Equipment
 	private int copper, silver, electrum, gold, platinum;
-	private String equipment;
+	private String equipment = "";
 	
 	// Array to store deathsave data.
 	private Boolean[][] deathSaves;
