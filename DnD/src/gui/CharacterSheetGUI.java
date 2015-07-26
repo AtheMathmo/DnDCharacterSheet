@@ -208,9 +208,8 @@ public class CharacterSheetGUI extends JFrame {
     }
 
     private class HeaderPanel extends JPanel implements DocumentListener {
-        //TODO add level!
-
         private JTextField characterNameTextField;
+        private JTextField levelTextField;
         private CharacterDetailsPanel charDetailsPanel;
 
         public HeaderPanel() {
@@ -235,28 +234,64 @@ public class CharacterSheetGUI extends JFrame {
             Font charNameFont = new Font(Font.SANS_SERIF, Font.BOLD, 20);
             characterNameTextField.setFont(charNameFont);
             characterNameTextField.getDocument().putProperty("owner", characterNameTextField);
+            characterNameTextField.getDocument().putProperty("charAttr", "CharName");
             characterNameTextField.getDocument().addDocumentListener(this);
 
+            JLabel levelLabel = new JLabel("Level");
+            constraints.gridx = 0; constraints.gridy = 1;
+            constraints.anchor = GridBagConstraints.LINE_END;
+            this.add(levelLabel, constraints);
+
+            levelTextField = new JTextField(3);
+            constraints.gridx = 1; constraints.anchor = GridBagConstraints.LINE_START;
+            this.add(levelTextField, constraints);
+
+            AbstractDocument levelDoc = (AbstractDocument) levelTextField.getDocument();
+            levelDoc.addDocumentListener(this);
+            levelDoc.putProperty("owner", levelTextField);
+            levelDoc.putProperty("charAttr", "Level");
+
+            NumericalFilter numFilter = new NumericalFilter();
+            numFilter.setMaxCharacters(3);
+            levelDoc.setDocumentFilter(numFilter);
+
             charDetailsPanel = new CharacterDetailsPanel();
-            constraints.gridx = 2;
+            constraints.gridx = 2; constraints.gridy = 0; constraints.gridheight = 2;
+            constraints.anchor = GridBagConstraints.CENTER;
             this.add(charDetailsPanel, constraints);
         }
 
         public void UpdateFields() {
             this.characterNameTextField.setText(character.getCharacterName());
+            this.levelTextField.setText(Integer.toString(character.getLevel()));
             this.charDetailsPanel.UpdateFields();
         }
 
+        private void SetCharacterProperty(AbstractDocument e) {
+            JTextComponent owner = (JTextComponent) e.getProperty("owner");
+            String charAttr = (String) e.getProperty("charAttr");
+
+            switch (charAttr) {
+                case "CharName":
+                    character.setCharacterName(owner.getText());
+                    break;
+                case "Level":
+                    if (owner.getText().length() > 0) {
+                        character.setLevel(Integer.parseInt(owner.getText()));
+                    } else {
+                        character.setLevel(0);
+                    }
+                    break;
+            }
+        }
         @Override
         public void insertUpdate(DocumentEvent e) {
-            Object owner = e.getDocument().getProperty("owner");
-            character.setCharacterName(((JTextField) owner).getText());
+            SetCharacterProperty((AbstractDocument) e.getDocument());
         }
 
         @Override
         public void removeUpdate(DocumentEvent e) {
-            Object owner = e.getDocument().getProperty("owner");
-            character.setCharacterName(((JTextField) owner).getText());
+            SetCharacterProperty((AbstractDocument) e.getDocument());
         }
 
         @Override
@@ -1130,7 +1165,10 @@ public class CharacterSheetGUI extends JFrame {
                         character.setTemporaryHitPoints(0);
                     break;
                 case "Hit Dice":
-                    //TODO add hit dice property to character class
+                    character.setHitDiceCurrent(textValue);
+                    break;
+                case "HitDiceTotal":
+                    character.setHitDiceTotal(textValue);
                     break;
                 case "AdditionalSpells":
                     character.setAdditionalSpells(textValue);
@@ -1160,8 +1198,7 @@ public class CharacterSheetGUI extends JFrame {
             private TextBoxOverLabel hpTempPanel;
             private JTextField hitDiceTotalTextField;
             private TextBoxOverLabel hitDicePanel;
-            private DeathSaveCheckBoxesPanel successDeathSaves;
-            private DeathSaveCheckBoxesPanel failureDeathSaves;
+            private DeathSaveCheckBoxesPanel deathSavesPanel;
 
             public InCombatPanel() {
                 InitializePanel();
@@ -1184,7 +1221,8 @@ public class CharacterSheetGUI extends JFrame {
                 numFilter.setMaxCharacters(3);
 
                 NumericalFilter signedFilter = new NumericalFilter();
-                signedFilter.setNeedsSign(true); signedFilter.setMaxCharacters(3);
+                signedFilter.setNeedsSign(true);
+                signedFilter.setMaxCharacters(3);
 
                 // Armor, Initiative, Speed
                 armorClassPanel = new TextBoxOverLabel("Armor Class", 3, numFilter);
@@ -1218,7 +1256,7 @@ public class CharacterSheetGUI extends JFrame {
                 hpMaxDoc.setDocumentFilter(numFilter);
                 hpMaxDoc.addDocumentListener(CombatPanel.this);
                 hpMaxDoc.putProperty("owner", hpMaxTextField);
-                hpMaxDoc.putProperty("charProperty","HPMax");
+                hpMaxDoc.putProperty("charProperty", "HPMax");
 
                 constraints.gridx = 1;
                 constraints.weightx = 1;
@@ -1251,6 +1289,12 @@ public class CharacterSheetGUI extends JFrame {
 
                 hitDiceTotalTextField = new JTextField();
                 hitDiceTotalTextField.setColumns(3);
+
+                AbstractDocument hitDiceTotalDoc = (AbstractDocument) hitDiceTotalTextField.getDocument();
+                hitDiceTotalDoc.putProperty("owner", hitDiceTotalTextField);
+                hitDiceTotalDoc.putProperty("charProperty", "HitDiceTotal");
+                hitDiceTotalDoc.addDocumentListener(CombatPanel.this);
+
                 constraints.gridx = 1;
                 constraints.weightx = 1;
                 hitDiceHolder.add(hitDiceTotalTextField, constraints);
@@ -1266,29 +1310,12 @@ public class CharacterSheetGUI extends JFrame {
                 constraints.gridwidth = 3;
                 this.add(hitDiceHolder, constraints);
 
-                JPanel deathSaveHolder = new JPanel();
-                deathSaveHolder.setLayout(new GridBagLayout());
-
-                successDeathSaves = new DeathSaveCheckBoxesPanel("Successes");
-                constraints.gridx = 0;
-                constraints.gridy = 0;
-                constraints.anchor = GridBagConstraints.LINE_END;
-                deathSaveHolder.add(successDeathSaves, constraints);
-
-                failureDeathSaves = new DeathSaveCheckBoxesPanel("Failures");
-                constraints.gridy = 1;
-                deathSaveHolder.add(failureDeathSaves, constraints);
-
-                JLabel deathSavesLabel = new JLabel("Death Saves");
-                deathSavesLabel.setFont(CharacterSheetGUI.SectionTitleFont);
-                constraints.gridy = 2;
-                constraints.anchor = GridBagConstraints.CENTER;
-                deathSaveHolder.add(deathSavesLabel, constraints);
+                deathSavesPanel = new DeathSaveCheckBoxesPanel();
 
                 constraints.gridx = 3;
                 constraints.gridy = 3;
                 constraints.gridwidth = 3;
-                this.add(deathSaveHolder, constraints);
+                this.add(deathSavesPanel, constraints);
             }
 
             public void UpdateFields() {
@@ -1299,6 +1326,11 @@ public class CharacterSheetGUI extends JFrame {
                 hpTempPanel.textField.setText(Integer.toString(character.getTemporaryHitPoints()));
 
                 hpMaxTextField.setText(Integer.toString(character.getMaxHitPoints()));
+
+                hitDiceTotalTextField.setText(character.getHitDiceTotal());
+                hitDicePanel.textField.setText(character.getHitDiceCurrent());
+
+                deathSavesPanel.UpdateFields();
             }
 
             private class TextBoxOverLabel extends JPanel {
@@ -1344,36 +1376,74 @@ public class CharacterSheetGUI extends JFrame {
                 }
             }
 
-            private class DeathSaveCheckBoxesPanel extends JPanel {
+            private class DeathSaveCheckBoxesPanel extends JPanel implements ItemListener {
                 //TODO link up to character class
-                private JCheckBox firstCheckBox;
-                private JCheckBox secondCheckBox;
-                private JCheckBox thirdCheckBox;
+                private JCheckBox[][] deathSaveCheckBoxes;
 
-                private final int boxSize = 5;
-
-                public DeathSaveCheckBoxesPanel(String labelText) {
+                public DeathSaveCheckBoxesPanel() {
                     InitializePanel();
-                    AddComponents(labelText);
+                    AddComponents();
                 }
 
                 private void InitializePanel() {
-                    this.setLayout(new BoxLayout(this, BoxLayout.X_AXIS));
+                    this.setLayout(new GridBagLayout());
                 }
 
-                private void AddComponents(String labelText) {
-                    JLabel label = new JLabel(labelText);
-                    this.add(label);
+                private void AddComponents() {
+                    GridBagConstraints constraints = new GridBagConstraints();
+                    constraints.gridx = 0; constraints.gridy = 0;
+                    constraints.weightx = 1.0; constraints.anchor = GridBagConstraints.LINE_END;
+                    deathSaveCheckBoxes = new JCheckBox[2][3];
 
-                    firstCheckBox = new JCheckBox();
-                    secondCheckBox = new JCheckBox();
-                    thirdCheckBox = new JCheckBox();
+                    for (int row = 0; row < 2; row ++) {
+                        for (int col = 0; col < 3; col++) {
+                            deathSaveCheckBoxes[row][col] = new JCheckBox();
+                            deathSaveCheckBoxes[row][col].addItemListener(this);
+                        }
+                    }
 
-                    this.add(firstCheckBox);
-                    this.add(Box.createRigidArea(new Dimension(boxSize, 0)));
-                    this.add(secondCheckBox);
-                    this.add(Box.createRigidArea(new Dimension(boxSize, 0)));
-                    this.add(thirdCheckBox);
+                    JLabel successLabel = new JLabel("Successes");
+                    this.add(successLabel, constraints); constraints.gridx += 1;
+
+                    this.add(deathSaveCheckBoxes[0][0], constraints); constraints.gridx += 1;
+                    this.add(deathSaveCheckBoxes[0][1], constraints); constraints.gridx += 1;
+                    this.add(deathSaveCheckBoxes[0][2], constraints);
+
+                    JLabel failLabel = new JLabel("Failures");
+                    constraints.gridx = 0; constraints.gridy = 1;
+                    this.add(failLabel, constraints); constraints.gridx += 1;
+
+                    this.add(deathSaveCheckBoxes[1][0], constraints); constraints.gridx += 1;
+                    this.add(deathSaveCheckBoxes[1][1], constraints); constraints.gridx += 1;
+                    this.add(deathSaveCheckBoxes[1][2], constraints);
+
+                    JLabel deathSavesLabel = new JLabel("Death Saves");
+                    deathSavesLabel.setFont(CharacterSheetGUI.SectionTitleFont);
+                    constraints.gridy = 2; constraints.gridx = 0; constraints.gridwidth = 4;
+                    constraints.anchor = GridBagConstraints.CENTER;
+                    this.add(deathSavesLabel, constraints);
+                }
+
+                public void UpdateFields() {
+                    boolean[][] charDeathSaves = character.getDeathSaves();
+
+                    for (int row = 0; row < 2; row ++) {
+                        for (int col = 0; col < 3; col ++) {
+                            deathSaveCheckBoxes[row][col].setSelected(charDeathSaves[row][col]);
+                        }
+                    }
+                }
+
+                @Override
+                public void itemStateChanged(ItemEvent e) {
+                    boolean[][] deathSaves = new boolean[2][3];
+                    for (int row = 0; row < 2; row ++) {
+                        for (int col = 0; col < 3; col++) {
+                            deathSaves[row][col] = deathSaveCheckBoxes[row][col].isSelected();
+                        }
+                    }
+
+                    character.setDeathSaves(deathSaves);
                 }
             }
         }
@@ -1399,16 +1469,21 @@ public class CharacterSheetGUI extends JFrame {
                 GridBagConstraints constraints = new GridBagConstraints();
                 constraints.weightx = 1;
                 constraints.anchor = GridBagConstraints.LINE_START;
-                constraints.ipadx = 1; constraints.gridx = 0; constraints.gridy = 0;
+                constraints.ipadx = 1;
+                constraints.gridx = 0;
+                constraints.gridy = 0;
 
                 firstAttack = new InputFields(0);
                 secondAttack = new InputFields(1);
                 thirdAttack = new InputFields(2);
 
                 constraints.gridwidth = 3;
-                this.add(firstAttack, constraints); constraints.gridy += 1;
-                this.add(secondAttack, constraints); constraints.gridy += 1;
-                this.add(thirdAttack, constraints); constraints.gridy += 1;
+                this.add(firstAttack, constraints);
+                constraints.gridy += 1;
+                this.add(secondAttack, constraints);
+                constraints.gridy += 1;
+                this.add(thirdAttack, constraints);
+                constraints.gridy += 1;
 
                 additionalSpellsArea = new JTextArea(8, 38);
                 additionalSpellsArea.setLineWrap(true);
@@ -1424,7 +1499,8 @@ public class CharacterSheetGUI extends JFrame {
                         ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
 
                 constraints.anchor = GridBagConstraints.CENTER;
-                this.add(spellsScrollPane, constraints); constraints.gridy += 1;
+                this.add(spellsScrollPane, constraints);
+                constraints.gridy += 1;
 
                 JLabel titleLabel = new JLabel("Attacks & Spellcasting");
                 titleLabel.setFont(CharacterSheetGUI.SectionTitleFont);
@@ -1465,7 +1541,9 @@ public class CharacterSheetGUI extends JFrame {
 
                 private void AddComponents(int rowNumber) {
                     GridBagConstraints constraints = new GridBagConstraints();
-                    constraints.weightx = 1; constraints.gridx = 0; constraints.gridy = 0;
+                    constraints.weightx = 1;
+                    constraints.gridx = 0;
+                    constraints.gridy = 0;
                     constraints.anchor = GridBagConstraints.LINE_START;
 
                     if (rowNumber == 0) {
@@ -1479,7 +1557,8 @@ public class CharacterSheetGUI extends JFrame {
                         constraints.gridx += 1;
                         this.add(damageTypeLabel, constraints);
 
-                        constraints.gridy += 1; constraints.gridx = 0;
+                        constraints.gridy += 1;
+                        constraints.gridx = 0;
                     }
 
                     nameField = new JTextField(24);
@@ -1516,7 +1595,6 @@ public class CharacterSheetGUI extends JFrame {
 
                     this.add(damageField, constraints);
 
-                    }
                 }
             }
         }
@@ -1728,6 +1806,7 @@ public class CharacterSheetGUI extends JFrame {
                 }
             }
         }
+    }
 
     private class TraitsPanel extends JPanel {
 

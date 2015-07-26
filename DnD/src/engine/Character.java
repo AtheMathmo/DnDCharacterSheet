@@ -374,15 +374,31 @@ public class Character implements java.io.Serializable {
 		this.speed = speed;
 	}
 
-	public Attack[] getAttacks() {
+    public String getHitDiceTotal() {
+        return hitDiceTotal;
+    }
+
+    public void setHitDiceTotal(String hitDiceTotal) {
+        this.hitDiceTotal = hitDiceTotal;
+    }
+
+    public String getHitDiceCurrent() {
+        return hitDiceCurrent;
+    }
+
+    public void setHitDiceCurrent(String hitDiceCurrent) {
+        this.hitDiceCurrent = hitDiceCurrent;
+    }
+
+    public Attack[] getAttacks() {
 		return attacks;
 	}
 
-	public Boolean[][] getDeathSaves() {
+	public boolean[][] getDeathSaves() {
 		return deathSaves;
 	}
 
-	public void setDeathSaves(Boolean[][] deathSaves) {
+	public void setDeathSaves(boolean[][] deathSaves) {
 		this.deathSaves = deathSaves;
 	}
 
@@ -486,6 +502,7 @@ public class Character implements java.io.Serializable {
 	
 	// Combat
 	private int maxHitPoints, currentHitPoints, temporaryHitPoints, armorClass, initiative, speed;
+	private String hitDiceTotal = "", hitDiceCurrent = "";
 
 	private Attack[] attacks = new Attack[] { new Attack(), new Attack(), new Attack() };
 
@@ -493,8 +510,8 @@ public class Character implements java.io.Serializable {
 	private int copper, silver, electrum, gold, platinum;
 	private String equipment = "";
 	
-	// Array to store deathsave data.
-	private Boolean[][] deathSaves;
+	// Array to store death save data.
+	private boolean[][] deathSaves = new boolean[][] { new boolean[3], new boolean[3] };
 	
 	public Character()
 	{
