@@ -10,6 +10,8 @@ import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
 import java.awt.event.*;
 import java.io.File;
+import java.io.InputStream;
+import java.io.StringWriter;
 import java.util.*;
 import javax.swing.border.BevelBorder;
 import javax.swing.event.DocumentEvent;
@@ -18,9 +20,11 @@ import javax.swing.text.AbstractDocument;
 import javax.swing.text.JTextComponent;
 
 public class CharacterSheetGUI extends JFrame {
-    public static final Font SectionTitleFont = new Font(Font.SANS_SERIF, Font.BOLD, 18);
+    //TODO deal with fields for dice, so can autodetect the roll needed.
 
-    public static final Border SectionBorder = BorderFactory.createCompoundBorder(
+    public final Font SectionTitleFont = new Font(Font.SANS_SERIF, Font.BOLD, 18);
+
+    public final Border SectionBorder = BorderFactory.createCompoundBorder(
             BorderFactory.createBevelBorder(BevelBorder.LOWERED),
             BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
@@ -141,7 +145,7 @@ public class CharacterSheetGUI extends JFrame {
     }
 
     private class ToolBar extends JToolBar implements ActionListener {
-
+        //TODO add a panel for doing more complicated rolls.
         private DataHandler dataHandler;
 
         public ToolBar(String toolBarName, DataHandler dataHandler) {
@@ -174,6 +178,12 @@ public class CharacterSheetGUI extends JFrame {
             importButton.setActionCommand("Import");
             importButton.addActionListener(this);
             this.add(importButton);
+
+            Button infoButton = new Button("Info");
+            infoButton.setPreferredSize(new Dimension(100,25));
+            infoButton.setActionCommand("Info");
+            infoButton.addActionListener(this);
+            this.add(infoButton);
         }
 
         public void actionPerformed(ActionEvent ae) {
@@ -204,6 +214,12 @@ public class CharacterSheetGUI extends JFrame {
                     File file = fileChooser.getSelectedFile();
                     this.dataHandler.ImportData(file);
                 }
+            } else if (ae.getActionCommand().equals("Info")) {
+                String programInfo = DataHandler.ReadInStream(CharacterSheetGUI.this.getClass().getResourceAsStream(
+                        "ProgramInfo"));
+
+                JOptionPane.showMessageDialog(contentPane, programInfo,
+                        "Character Sheet Info", JOptionPane.INFORMATION_MESSAGE);
             }
         }
     }
@@ -316,7 +332,7 @@ public class CharacterSheetGUI extends JFrame {
 
             private void InitializePanel() {
                 this.setLayout(new GridBagLayout());
-                this.setBorder(CharacterSheetGUI.SectionBorder);
+                this.setBorder(SectionBorder);
 
             }
 
@@ -549,7 +565,7 @@ public class CharacterSheetGUI extends JFrame {
             bottomHoldingPanel.add(profAndLangScrollPane);
 
             JLabel profAndLangLabel = new JLabel("Other Proficiencies & Languages");
-            profAndLangLabel.setFont(CharacterSheetGUI.SectionTitleFont);
+            profAndLangLabel.setFont(SectionTitleFont);
             bottomHoldingPanel.add(profAndLangLabel);
 
         }
@@ -690,36 +706,42 @@ public class CharacterSheetGUI extends JFrame {
 
             private void InitializePanel() {
                 this.setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
-                this.setBorder(CharacterSheetGUI.SectionBorder);
+                this.setBorder(SectionBorder);
             }
 
             private void AddComponents() {
                 strBox = new AttributeBox("Strength", 1, 2);
+                strBox.addMouseListener(rollListener);
                 this.add(strBox);
 
                 this.add(Box.createRigidArea(new Dimension(1, 40)));
 
                 dexBox = new AttributeBox("Dexterity", 1, 2);
+                dexBox.addMouseListener(rollListener);
                 this.add(dexBox);
 
                 this.add(Box.createRigidArea(new Dimension(1, 40)));
 
                 conBox = new AttributeBox("Constitution", 1, 2);
+                conBox.addMouseListener(rollListener);
                 this.add(conBox);
 
                 this.add(Box.createRigidArea(new Dimension(1, 40)));
 
                 intBox = new AttributeBox("Intelligence", 1, 2);
+                intBox.addMouseListener(rollListener);
                 this.add(intBox);
 
                 this.add(Box.createRigidArea(new Dimension(1, 40)));
 
                 wisBox = new AttributeBox("Wisdom", 1, 2);
+                wisBox.addMouseListener(rollListener);
                 this.add(wisBox);
 
                 this.add(Box.createRigidArea(new Dimension(1, 40)));
 
                 chaBox = new AttributeBox("Charisma", 1, 2);
+                chaBox.addMouseListener(rollListener);
                 this.add(chaBox);
             }
 
@@ -812,7 +834,7 @@ public class CharacterSheetGUI extends JFrame {
 
             }
 
-            private class AttributeBox extends JPanel {
+            private class AttributeBox extends JPanel implements Rollable {
                 private String attrString;
 
                 private JTextArea attrArea;
@@ -868,6 +890,11 @@ public class CharacterSheetGUI extends JFrame {
                     constraints.gridy = 2;
                     this.add(attrField, constraints);
                 }
+
+                @Override
+                public int[] GetRoll() {
+                    return new int[] { GetSignedIntValue(attrArea.getText()) };
+                }
             }
         }
 
@@ -886,7 +913,7 @@ public class CharacterSheetGUI extends JFrame {
 
             private void InitializePanel() {
                 this.setLayout(new GridBagLayout());
-                this.setBorder(CharacterSheetGUI.SectionBorder);
+                this.setBorder(SectionBorder);
             }
 
             private void AddComponents() {
@@ -923,7 +950,7 @@ public class CharacterSheetGUI extends JFrame {
                 constraints.gridy += 1;
 
                 JLabel savingThrowsLabel = new JLabel("Saving Throws");
-                savingThrowsLabel.setFont(CharacterSheetGUI.SectionTitleFont);
+                savingThrowsLabel.setFont(SectionTitleFont);
                 constraints.gridy += 1;
                 constraints.anchor = GridBagConstraints.CENTER;
                 this.add(savingThrowsLabel, constraints);
@@ -960,7 +987,7 @@ public class CharacterSheetGUI extends JFrame {
 
             private void InitializePanel() {
                 this.setLayout(new GridBagLayout());
-                this.setBorder(CharacterSheetGUI.SectionBorder);
+                this.setBorder(SectionBorder);
             }
 
             private void AddComponents() {
@@ -981,7 +1008,7 @@ public class CharacterSheetGUI extends JFrame {
                 }
 
                 JLabel skillsLabel = new JLabel("Skills");
-                skillsLabel.setFont(CharacterSheetGUI.SectionTitleFont);
+                skillsLabel.setFont(SectionTitleFont);
                 constraints.anchor = GridBagConstraints.CENTER;
                 constraints.gridy += 1;
                 this.add(skillsLabel, constraints);
@@ -999,15 +1026,11 @@ public class CharacterSheetGUI extends JFrame {
             }
         }
 
-        private class CheckBoxPanel extends JPanel implements ItemListener {
+        private class CheckBoxPanel extends JPanel implements ItemListener, Rollable {
             private JCheckBox checkBox;
             private JTextField textField;
             private JLabel label;
             private String identifier;
-
-            public int GetRollBonus() {
-                return GetSignedIntValue(textField.getText());
-            }
 
             public CheckBoxPanel(String labelText, String suffix) {
                 this.InitializePanel();
@@ -1074,6 +1097,7 @@ public class CharacterSheetGUI extends JFrame {
                         break;
                 }
             }
+
             @Override
             public void itemStateChanged(ItemEvent e) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
@@ -1085,6 +1109,10 @@ public class CharacterSheetGUI extends JFrame {
                     label.setFont(defaultLabelFont);
                     SetProfByName(this.identifier, false);
                 }
+            }
+
+            public int[] GetRoll() {
+                return new int [] { GetSignedIntValue(textField.getText()) };
             }
         }
     }
@@ -1220,7 +1248,7 @@ public class CharacterSheetGUI extends JFrame {
 
             private void InitializePanel() {
                 this.setLayout(new GridBagLayout());
-                this.setBorder(CharacterSheetGUI.SectionBorder);
+                this.setBorder(SectionBorder);
             }
 
             private void AddComponents() {
@@ -1381,7 +1409,7 @@ public class CharacterSheetGUI extends JFrame {
                     this.add(textField, constraints);
 
                     JLabel label = new JLabel(labelText, JLabel.CENTER);
-                    label.setFont(CharacterSheetGUI.SectionTitleFont);
+                    label.setFont(SectionTitleFont);
                     constraints.gridx = 0;
                     constraints.gridy = 1;
                     constraints.gridwidth = 3;
@@ -1390,7 +1418,6 @@ public class CharacterSheetGUI extends JFrame {
             }
 
             private class DeathSaveCheckBoxesPanel extends JPanel implements ItemListener {
-                //TODO link up to character class
                 private JCheckBox[][] deathSaveCheckBoxes;
 
                 public DeathSaveCheckBoxesPanel() {
@@ -1431,7 +1458,7 @@ public class CharacterSheetGUI extends JFrame {
                     this.add(deathSaveCheckBoxes[1][2], constraints);
 
                     JLabel deathSavesLabel = new JLabel("Death Saves");
-                    deathSavesLabel.setFont(CharacterSheetGUI.SectionTitleFont);
+                    deathSavesLabel.setFont(SectionTitleFont);
                     constraints.gridy = 2; constraints.gridx = 0; constraints.gridwidth = 4;
                     constraints.anchor = GridBagConstraints.CENTER;
                     this.add(deathSavesLabel, constraints);
@@ -1475,7 +1502,7 @@ public class CharacterSheetGUI extends JFrame {
 
             private void InitializePanel() {
                 this.setLayout(new GridBagLayout());
-                this.setBorder(CharacterSheetGUI.SectionBorder);
+                this.setBorder(SectionBorder);
             }
 
             private void AddComponents() {
@@ -1516,7 +1543,7 @@ public class CharacterSheetGUI extends JFrame {
                 constraints.gridy += 1;
 
                 JLabel titleLabel = new JLabel("Attacks & Spellcasting");
-                titleLabel.setFont(CharacterSheetGUI.SectionTitleFont);
+                titleLabel.setFont(SectionTitleFont);
                 constraints.anchor = GridBagConstraints.PAGE_END;
                 this.add(titleLabel, constraints);
 
@@ -1629,7 +1656,7 @@ public class CharacterSheetGUI extends JFrame {
 
             private void InitializePanel() {
                 this.setLayout(new GridBagLayout());
-                this.setBorder(CharacterSheetGUI.SectionBorder);
+                this.setBorder(SectionBorder);
             }
 
             private void AddComponents() {
@@ -1742,7 +1769,7 @@ public class CharacterSheetGUI extends JFrame {
                 this.add(equipmentScrollPane, constraints);
 
                 JLabel equipmentLabel = new JLabel("Equipment");
-                equipmentLabel.setFont(CharacterSheetGUI.SectionTitleFont);
+                equipmentLabel.setFont(SectionTitleFont);
 
                 constraints.gridx = 0;
                 constraints.gridy = 7;
@@ -1836,7 +1863,7 @@ public class CharacterSheetGUI extends JFrame {
 
         private void InitializePanel() {
             this.setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
-            this.setBorder(CharacterSheetGUI.SectionBorder);
+            this.setBorder(SectionBorder);
         }
 
         private void AddComponents() {
@@ -1893,7 +1920,7 @@ public class CharacterSheetGUI extends JFrame {
                 this.add(scrollPane);
 
                 JLabel label = new JLabel(labelText);
-                label.setFont(CharacterSheetGUI.SectionTitleFont);
+                label.setFont(SectionTitleFont);
                 this.add(label);
                 label.setAlignmentX(CENTER_ALIGNMENT);
 
@@ -1949,21 +1976,51 @@ public class CharacterSheetGUI extends JFrame {
 
         public void mousePressed(MouseEvent e){
             if (e.isPopupTrigger()) {
-                int bonusVal = ( (CharacterValuesHolder.CheckBoxPanel) e.getSource()).GetRollBonus();
+                CreatePopup(e);
+                }
+        }
+
+        public void mouseReleased(MouseEvent e) {
+            if (e.isPopupTrigger()) {
+                CreatePopup(e);
+            }
+        }
+
+        private void CreatePopup(MouseEvent e) {
+            int[] rollVals = ( (Rollable) e.getSource()).GetRoll();
+
+            if (rollVals.length > 0) {
+                int bonusVal = rollVals[0];
+
                 PopUpDemo menu = new PopUpDemo(bonusVal);
                 menu.show(e.getComponent(), e.getX(), e.getY());
-            }
+            } else if (rollVals.length > 1) {
+                int bonusVal = rollVals[0];
+                int rollTotal = rollVals[1];
+
+                PopUpDemo menu = new PopUpDemo(bonusVal, rollTotal);
+                menu.show(e.getComponent(), e.getX(), e.getY());
         }
     }
 
     class PopUpDemo extends JPopupMenu {
         JMenuItem anItem;
 
-        public PopUpDemo(int bonus){
+        public PopUpDemo() {
+            anItem = new JMenuItem();
+            add(anItem);
+        }
+
+        public PopUpDemo(int bonus) {
             anItem = new JMenuItem(new RollAction(bonus));
             add(anItem);
-
         }
+
+        public PopUpDemo(int bonus, int total) {
+            anItem = new JMenuItem(new RollAction(bonus, total));
+            add(anItem);
+        }
+    }
 
         private class RollAction extends AbstractAction {
 
@@ -1983,6 +2040,15 @@ public class CharacterSheetGUI extends JFrame {
                 putValue(SHORT_DESCRIPTION, "Roll the selected attribute.");
             }
 
+            public RollAction(int bonus, int total) {
+                super("Roll");
+
+                this.bonus = bonus;
+                this.rollTotal = total;
+                putValue(MNEMONIC_KEY, KeyEvent.VK_R);
+                putValue(SHORT_DESCRIPTION, "Roll the selected attribute.");
+            }
+
             @Override
             public void actionPerformed(ActionEvent e) {
                 RollAttribute(this.rollTotal, this.bonus);
@@ -1992,7 +2058,7 @@ public class CharacterSheetGUI extends JFrame {
                 int roll = rand.nextInt(rollValue) + 1;
                 int total = roll + bonus;
 
-                JOptionPane.showMessageDialog(null, String.format("Roll value is: %d + %d = %d", roll, bonus, total));
+                JOptionPane.showMessageDialog(contentPane, String.format("Roll value is: %d + %d = %d", roll, bonus, total));
             }
         }
     }

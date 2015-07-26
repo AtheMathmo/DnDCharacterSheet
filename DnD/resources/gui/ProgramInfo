@@ -1,0 +1,10 @@
+DnD Digital Character Sheet v0.1.
+
+You can Save and Load characters using the toolbar buttons.
+Import is currently not implemented, will allow use with another tool I like (tcaraways char creator).
+
+You can right click on the text labels next to
+character attributes, skills or saving throws to perform a roll for this field.
+
+Finally please report any bugs to this page:
+https://github.com/AtheMathmo/DnDCharacterSheet/issues
