@@ -8,10 +8,7 @@ import java.awt.*;
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
+import java.awt.event.*;
 import java.io.File;
 import java.util.*;
 import javax.swing.border.BevelBorder;
@@ -28,6 +25,10 @@ public class CharacterSheetGUI extends JFrame {
             BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
     private final JFileChooser fileChooser = new JFileChooser();
+
+    private final Random rand = new Random();
+
+    private RollListener rollListener = new RollListener();
 
     private JPanel contentPane;
     private HeaderPanel headerPanel;
@@ -897,6 +898,13 @@ public class CharacterSheetGUI extends JFrame {
                 wisCheckBox = new CheckBoxPanel("Wisdom", "Throw");
                 chaCheckBox = new CheckBoxPanel("Charisma", "Throw");
 
+                strCheckBox.addMouseListener(rollListener);
+                dexCheckBox.addMouseListener(rollListener);
+                conCheckBox.addMouseListener(rollListener);
+                intCheckBox.addMouseListener(rollListener);
+                wisCheckBox.addMouseListener(rollListener);
+                chaCheckBox.addMouseListener(rollListener);
+
                 constraints.gridx = 0;
                 constraints.gridy = 0;
                 constraints.anchor = GridBagConstraints.LINE_START;
@@ -965,6 +973,7 @@ public class CharacterSheetGUI extends JFrame {
 
                 for (Character.Skills skill : Character.Skills.values()) {
                     CheckBoxPanel skillPanel = new CheckBoxPanel(skill.toString(),"");
+                    skillPanel.addMouseListener(rollListener);
                     skillPanelMap.put(skill, skillPanel);
                     constraints.gridy += 1;
                     this.add(skillPanel, constraints);
@@ -995,6 +1004,10 @@ public class CharacterSheetGUI extends JFrame {
             private JTextField textField;
             private JLabel label;
             private String identifier;
+
+            public int GetRollBonus() {
+                return GetSignedIntValue(textField.getText());
+            }
 
             public CheckBoxPanel(String labelText, String suffix) {
                 this.InitializePanel();
@@ -1928,6 +1941,58 @@ public class CharacterSheetGUI extends JFrame {
                 } catch (Exception e1) {
                     e1.printStackTrace();
                 }
+            }
+        }
+    }
+
+    private class RollListener extends MouseAdapter {
+
+        public void mousePressed(MouseEvent e){
+            if (e.isPopupTrigger()) {
+                int bonusVal = ( (CharacterValuesHolder.CheckBoxPanel) e.getSource()).GetRollBonus();
+                PopUpDemo menu = new PopUpDemo(bonusVal);
+                menu.show(e.getComponent(), e.getX(), e.getY());
+            }
+        }
+    }
+
+    class PopUpDemo extends JPopupMenu {
+        JMenuItem anItem;
+
+        public PopUpDemo(int bonus){
+            anItem = new JMenuItem(new RollAction(bonus));
+            add(anItem);
+
+        }
+
+        private class RollAction extends AbstractAction {
+
+            private int bonus = 0;
+            private int rollTotal = 20;
+            public RollAction() {
+                super("Roll");
+                putValue(MNEMONIC_KEY, KeyEvent.VK_R);
+                putValue(SHORT_DESCRIPTION, "Roll the selected attribute.");
+            }
+
+            public RollAction(int bonus) {
+                super("Roll");
+
+                this.bonus = bonus;
+                putValue(MNEMONIC_KEY, KeyEvent.VK_R);
+                putValue(SHORT_DESCRIPTION, "Roll the selected attribute.");
+            }
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                RollAttribute(this.rollTotal, this.bonus);
+            }
+
+            private void RollAttribute(int rollValue, int bonus) {
+                int roll = rand.nextInt(rollValue) + 1;
+                int total = roll + bonus;
+
+                JOptionPane.showMessageDialog(null, String.format("Roll value is: %d + %d = %d", roll, bonus, total));
             }
         }
     }
