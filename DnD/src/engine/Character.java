@@ -382,11 +382,11 @@ public class Character implements java.io.Serializable {
         this.hitDiceTotal = hitDiceTotal;
     }
 
-    public String getHitDiceCurrent() {
+    public int getHitDiceCurrent() {
         return hitDiceCurrent;
     }
 
-    public void setHitDiceCurrent(String hitDiceCurrent) {
+    public void setHitDiceCurrent(int hitDiceCurrent) {
         this.hitDiceCurrent = hitDiceCurrent;
     }
 
@@ -501,8 +501,8 @@ public class Character implements java.io.Serializable {
 	private String additionalSpells = "";
 	
 	// Combat
-	private int maxHitPoints, currentHitPoints, temporaryHitPoints, armorClass, initiative, speed;
-	private String hitDiceTotal = "", hitDiceCurrent = "";
+	private int maxHitPoints, currentHitPoints, temporaryHitPoints, armorClass, initiative, speed, hitDiceCurrent;
+	private String hitDiceTotal = "";
 
 	private Attack[] attacks = new Attack[] { new Attack(), new Attack(), new Attack() };
 

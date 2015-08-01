@@ -10,12 +10,13 @@ import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
 import java.awt.event.*;
 import java.io.File;
-import java.io.InputStream;
-import java.io.StringWriter;
+import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.*;
 import javax.swing.border.BevelBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+import javax.swing.event.HyperlinkEvent;
 import javax.swing.text.AbstractDocument;
 import javax.swing.text.JTextComponent;
 
@@ -32,7 +33,7 @@ public class CharacterSheetGUI extends JFrame {
 
     private final Random rand = new Random();
 
-    private RollListener rollListener = new RollListener();
+    private RightClickListener rightClickListener = new RightClickListener();
 
     private JPanel contentPane;
     private HeaderPanel headerPanel;
@@ -179,6 +180,12 @@ public class CharacterSheetGUI extends JFrame {
             importButton.addActionListener(this);
             this.add(importButton);
 
+            Button rollButton = new Button("Roll");
+            rollButton.setPreferredSize(new Dimension(100, 25));
+            rollButton.setActionCommand("Roll");
+            rollButton.addActionListener(this);
+            this.add(rollButton);
+
             Button infoButton = new Button("Info");
             infoButton.setPreferredSize(new Dimension(100,25));
             infoButton.setActionCommand("Info");
@@ -214,13 +221,39 @@ public class CharacterSheetGUI extends JFrame {
                     File file = fileChooser.getSelectedFile();
                     this.dataHandler.ImportData(file);
                 }
+            } else if (ae.getActionCommand().equals("Roll")) {
+                DisplayRollPanel();
             } else if (ae.getActionCommand().equals("Info")) {
-                String programInfo = DataHandler.ReadInStream(CharacterSheetGUI.this.getClass().getResourceAsStream(
-                        "ProgramInfo"));
-
-                JOptionPane.showMessageDialog(contentPane, programInfo,
-                        "Character Sheet Info", JOptionPane.INFORMATION_MESSAGE);
+                DisplayInfo();
             }
+        }
+
+        private void DisplayRollPanel()
+        {
+            RollPanel rollPane = new RollPanel();
+            JOptionPane.showMessageDialog(contentPane, rollPane, "Roll", JOptionPane.PLAIN_MESSAGE);
+        }
+
+        private void DisplayInfo() {
+            String programInfo = DataHandler.ReadInStream(CharacterSheetGUI.this.getClass().getResourceAsStream(
+                    "ProgramInfo.html"));
+
+            JEditorPane editorPane = new JEditorPane("text/html", programInfo);
+
+            editorPane.addHyperlinkListener(e -> {
+                if (e.getEventType().equals(HyperlinkEvent.EventType.ACTIVATED))
+                    try {
+                        if (Desktop.isDesktopSupported())
+                        {
+                            Desktop.getDesktop().browse(e.getURL().toURI());
+                        }
+                    } catch (IOException | URISyntaxException e1) {
+                        e1.printStackTrace();
+                    }
+            });
+            editorPane.setEditable(false);
+
+            JOptionPane.showMessageDialog(contentPane, editorPane);
         }
     }
 
@@ -711,37 +744,37 @@ public class CharacterSheetGUI extends JFrame {
 
             private void AddComponents() {
                 strBox = new AttributeBox("Strength", 1, 2);
-                strBox.addMouseListener(rollListener);
+                strBox.addMouseListener(rightClickListener);
                 this.add(strBox);
 
                 this.add(Box.createRigidArea(new Dimension(1, 40)));
 
                 dexBox = new AttributeBox("Dexterity", 1, 2);
-                dexBox.addMouseListener(rollListener);
+                dexBox.addMouseListener(rightClickListener);
                 this.add(dexBox);
 
                 this.add(Box.createRigidArea(new Dimension(1, 40)));
 
                 conBox = new AttributeBox("Constitution", 1, 2);
-                conBox.addMouseListener(rollListener);
+                conBox.addMouseListener(rightClickListener);
                 this.add(conBox);
 
                 this.add(Box.createRigidArea(new Dimension(1, 40)));
 
                 intBox = new AttributeBox("Intelligence", 1, 2);
-                intBox.addMouseListener(rollListener);
+                intBox.addMouseListener(rightClickListener);
                 this.add(intBox);
 
                 this.add(Box.createRigidArea(new Dimension(1, 40)));
 
                 wisBox = new AttributeBox("Wisdom", 1, 2);
-                wisBox.addMouseListener(rollListener);
+                wisBox.addMouseListener(rightClickListener);
                 this.add(wisBox);
 
                 this.add(Box.createRigidArea(new Dimension(1, 40)));
 
                 chaBox = new AttributeBox("Charisma", 1, 2);
-                chaBox.addMouseListener(rollListener);
+                chaBox.addMouseListener(rightClickListener);
                 this.add(chaBox);
             }
 
@@ -925,12 +958,12 @@ public class CharacterSheetGUI extends JFrame {
                 wisCheckBox = new CheckBoxPanel("Wisdom", "Throw");
                 chaCheckBox = new CheckBoxPanel("Charisma", "Throw");
 
-                strCheckBox.addMouseListener(rollListener);
-                dexCheckBox.addMouseListener(rollListener);
-                conCheckBox.addMouseListener(rollListener);
-                intCheckBox.addMouseListener(rollListener);
-                wisCheckBox.addMouseListener(rollListener);
-                chaCheckBox.addMouseListener(rollListener);
+                strCheckBox.addMouseListener(rightClickListener);
+                dexCheckBox.addMouseListener(rightClickListener);
+                conCheckBox.addMouseListener(rightClickListener);
+                intCheckBox.addMouseListener(rightClickListener);
+                wisCheckBox.addMouseListener(rightClickListener);
+                chaCheckBox.addMouseListener(rightClickListener);
 
                 constraints.gridx = 0;
                 constraints.gridy = 0;
@@ -1000,7 +1033,7 @@ public class CharacterSheetGUI extends JFrame {
 
                 for (Character.Skills skill : Character.Skills.values()) {
                     CheckBoxPanel skillPanel = new CheckBoxPanel(skill.toString(),"");
-                    skillPanel.addMouseListener(rollListener);
+                    skillPanel.addMouseListener(rightClickListener);
                     skillPanelMap.put(skill, skillPanel);
                     constraints.gridy += 1;
                     this.add(skillPanel, constraints);
@@ -1206,7 +1239,7 @@ public class CharacterSheetGUI extends JFrame {
                         character.setTemporaryHitPoints(0);
                     break;
                 case "Hit Dice":
-                    character.setHitDiceCurrent(textValue);
+                    character.setHitDiceCurrent(GetSignedIntValue(textValue));
                     break;
                 case "HitDiceTotal":
                     character.setHitDiceTotal(textValue);
@@ -1231,14 +1264,14 @@ public class CharacterSheetGUI extends JFrame {
         }
 
         private class InCombatPanel extends JPanel {
+            //TODO add a new nested class for hit dice, make it implement rollable
             private TextBoxOverLabel armorClassPanel;
             private TextBoxOverLabel initiativePanel;
             private TextBoxOverLabel speedPanel;
             private JTextField hpMaxTextField;
             private TextBoxOverLabel hpCurrentPanel;
             private TextBoxOverLabel hpTempPanel;
-            private JTextField hitDiceTotalTextField;
-            private TextBoxOverLabel hitDicePanel;
+            private HitDicePanel hitDicePanel;
             private DeathSaveCheckBoxesPanel deathSavesPanel;
 
             public InCombatPanel() {
@@ -1319,37 +1352,10 @@ public class CharacterSheetGUI extends JFrame {
                 this.add(hpTempPanel, constraints);
 
                 // Hit Dice, Death Saves
-                JPanel hitDiceHolder = new JPanel();
-                hitDiceHolder.setLayout(new GridBagLayout());
-
-                JLabel totalLabel = new JLabel("Total");
-                constraints.gridx = 0;
-                constraints.gridy = 0;
-                constraints.gridwidth = 1;
-                hitDiceHolder.add(totalLabel, constraints);
-
-                hitDiceTotalTextField = new JTextField();
-                hitDiceTotalTextField.setColumns(3);
-
-                AbstractDocument hitDiceTotalDoc = (AbstractDocument) hitDiceTotalTextField.getDocument();
-                hitDiceTotalDoc.putProperty("owner", hitDiceTotalTextField);
-                hitDiceTotalDoc.putProperty("charProperty", "HitDiceTotal");
-                hitDiceTotalDoc.addDocumentListener(CombatPanel.this);
-
-                constraints.gridx = 1;
-                constraints.weightx = 1;
-                hitDiceHolder.add(hitDiceTotalTextField, constraints);
-
-                hitDicePanel = new TextBoxOverLabel("Hit Dice", 7, null);
-                constraints.gridx = 0;
-                constraints.gridy = 1;
-                constraints.gridwidth = 2;
-                hitDiceHolder.add(hitDicePanel, constraints);
-
-                constraints.gridx = 0;
-                constraints.gridy = 3;
-                constraints.gridwidth = 3;
-                this.add(hitDiceHolder, constraints);
+                this.hitDicePanel = new HitDicePanel();
+                this.hitDicePanel.addMouseListener(rightClickListener);
+                constraints.gridy = 3; constraints.gridwidth = 3;
+                this.add(hitDicePanel, constraints);
 
                 deathSavesPanel = new DeathSaveCheckBoxesPanel();
 
@@ -1368,8 +1374,7 @@ public class CharacterSheetGUI extends JFrame {
 
                 hpMaxTextField.setText(Integer.toString(character.getMaxHitPoints()));
 
-                hitDiceTotalTextField.setText(character.getHitDiceTotal());
-                hitDicePanel.textField.setText(character.getHitDiceCurrent());
+                hitDicePanel.UpdateFields();
 
                 deathSavesPanel.UpdateFields();
             }
@@ -1415,6 +1420,94 @@ public class CharacterSheetGUI extends JFrame {
                     constraints.gridwidth = 3;
                     this.add(label, constraints);
                 }
+            }
+
+            private class HitDicePanel extends JPanel implements Rollable {
+                private JTextField hitDiceTotalTextField;
+                private TextBoxOverLabel hitDiceBox;
+
+                public HitDicePanel() {
+                    this.InitializePanel();
+                    this.AddComponents();
+                }
+
+                private void InitializePanel() {
+                    this.setLayout(new GridBagLayout());
+                }
+
+                private void AddComponents() {
+                    GridBagConstraints constraints = new GridBagConstraints();
+                    constraints.gridx = 0; constraints.gridy = 0;
+                    constraints.ipadx = 1; constraints.ipady = 1;
+                    constraints.weightx = 1; constraints.weighty = 1;
+
+                    JLabel totalLabel = new JLabel("Total");
+                    constraints.gridx = 0;
+                    constraints.gridy = 0;
+                    constraints.gridwidth = 1;
+                    this.add(totalLabel, constraints);
+
+                    hitDiceTotalTextField = new JTextField();
+                    hitDiceTotalTextField.setColumns(3);
+
+                    AbstractDocument hitDiceTotalDoc = (AbstractDocument) hitDiceTotalTextField.getDocument();
+                    hitDiceTotalDoc.putProperty("owner", hitDiceTotalTextField);
+                    hitDiceTotalDoc.putProperty("charProperty", "HitDiceTotal");
+                    hitDiceTotalDoc.addDocumentListener(CombatPanel.this);
+                    hitDiceTotalDoc.setDocumentFilter(new DiceFilter());
+
+                    constraints.gridx = 1;
+                    constraints.weightx = 1;
+                    this.add(hitDiceTotalTextField, constraints);
+
+                    hitDiceBox = new TextBoxOverLabel("Hit Dice", 7, null);
+                    AbstractDocument doc = (AbstractDocument) hitDiceBox.textField.getDocument();
+                    NumericalFilter signedFilter = new NumericalFilter();
+                    signedFilter.setMaxCharacters(5); signedFilter.setNeedsSign(true);
+                    doc.setDocumentFilter(signedFilter);
+
+                    constraints.gridx = 0;
+                    constraints.gridy = 1;
+                    constraints.gridwidth = 2;
+                    this.add(hitDiceBox, constraints);
+                }
+
+                public void UpdateFields() {
+                    this.hitDiceTotalTextField.setText(character.getHitDiceTotal());
+                    this.hitDiceBox.textField.setText(Integer.toString(character.getHitDiceCurrent()));
+                }
+
+                @Override
+                public int[] GetRoll() {
+                    int[] dice = GetDiceValue();
+
+                    if (dice.length == 0)
+                    {
+                        return new int[0];
+                    }
+
+                    return new int[] { GetSignedIntValue(hitDiceBox.textField.getText()), dice[0]*dice[1] };
+                }
+
+                private int[] GetDiceValue() {
+                    String totalText = hitDiceTotalTextField.getText();
+                    int dIndex = totalText.indexOf("d");
+
+                    if (dIndex == -1) {
+                        return new int[0];
+                    }
+
+                    String firstPart = totalText.substring(0,dIndex);
+                    String lastPart = totalText.substring(dIndex+1);
+
+                    if (firstPart.isEmpty() || lastPart.isEmpty())
+                    {
+                        return new int[0];
+                    }
+
+                    return new int[] { Integer.parseInt(firstPart), Integer.parseInt(lastPart) };
+                }
+
             }
 
             private class DeathSaveCheckBoxesPanel extends JPanel implements ItemListener {
@@ -1972,7 +2065,7 @@ public class CharacterSheetGUI extends JFrame {
         }
     }
 
-    private class RollListener extends MouseAdapter {
+    private class RightClickListener extends MouseAdapter {
 
         public void mousePressed(MouseEvent e){
             if (e.isPopupTrigger()) {
@@ -1987,36 +2080,38 @@ public class CharacterSheetGUI extends JFrame {
         }
 
         private void CreatePopup(MouseEvent e) {
-            int[] rollVals = ( (Rollable) e.getSource()).GetRoll();
+            int[] rollVals = ((Rollable) e.getSource()).GetRoll();
 
-            if (rollVals.length > 0) {
-                int bonusVal = rollVals[0];
-
-                PopUpDemo menu = new PopUpDemo(bonusVal);
-                menu.show(e.getComponent(), e.getX(), e.getY());
-            } else if (rollVals.length > 1) {
+            if (rollVals.length > 1) {
                 int bonusVal = rollVals[0];
                 int rollTotal = rollVals[1];
 
-                PopUpDemo menu = new PopUpDemo(bonusVal, rollTotal);
+                RightClickPopUp menu = new RightClickPopUp(bonusVal, rollTotal);
                 menu.show(e.getComponent(), e.getX(), e.getY());
-        }
-    }
+            } else if (rollVals.length > 0) {
+                int bonusVal = rollVals[0];
 
-    class PopUpDemo extends JPopupMenu {
+                RightClickPopUp menu = new RightClickPopUp(bonusVal);
+                menu.show(e.getComponent(), e.getX(), e.getY());
+            }
+
+            // For now provide no popup if a roll isn't available.
+        }
+
+    class RightClickPopUp extends JPopupMenu {
         JMenuItem anItem;
 
-        public PopUpDemo() {
+        public RightClickPopUp() {
             anItem = new JMenuItem();
             add(anItem);
         }
 
-        public PopUpDemo(int bonus) {
+        public RightClickPopUp(int bonus) {
             anItem = new JMenuItem(new RollAction(bonus));
             add(anItem);
         }
 
-        public PopUpDemo(int bonus, int total) {
+        public RightClickPopUp(int bonus, int total) {
             anItem = new JMenuItem(new RollAction(bonus, total));
             add(anItem);
         }
@@ -2026,6 +2121,7 @@ public class CharacterSheetGUI extends JFrame {
 
             private int bonus = 0;
             private int rollTotal = 20;
+
             public RollAction() {
                 super("Roll");
                 putValue(MNEMONIC_KEY, KeyEvent.VK_R);
