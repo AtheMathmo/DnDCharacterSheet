@@ -141,55 +141,66 @@ public class CharacterSheetGUI extends JFrame {
         contentPane.add(scrollPane, BorderLayout.CENTER);
 
         // Initialize top toolbar
-        contentPane.add(new ToolBar("Tools",  dataHandler), BorderLayout.NORTH);
+        //contentPane.add(new TopMenu("Tools",  dataHandler), BorderLayout.NORTH);
+        //contentPane.add(new MenuBar(dataHandler), BorderLayout.NORTH);
+        this.setJMenuBar(new MenuBar(dataHandler));
     }
 
-    private class ToolBar extends JToolBar implements ActionListener {
-        //TODO add a panel for doing more complicated rolls.
+    private class MenuBar extends JMenuBar implements ActionListener {
         private DataHandler dataHandler;
-
-        public ToolBar(String toolBarName, DataHandler dataHandler) {
-            super(toolBarName);
+        public MenuBar(DataHandler dataHandler) {
+            super();
             this.dataHandler = dataHandler;
 
-            InitializeToolBar();
+            InitializeMenuBar();
             AddButtons();
         }
 
-        private void InitializeToolBar() {
-            this.setOrientation(JToolBar.HORIZONTAL);
+        private void InitializeMenuBar() {
+            this.setLayout(new BoxLayout(this, BoxLayout.LINE_AXIS));
+            this.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1,
+                    Color.BLACK));
         }
 
         private void AddButtons() {
-            Button saveButton = new Button("Save");
-            saveButton.setPreferredSize(new Dimension(100, 25));
+            VerticalMenu fileMenu = new VerticalMenu("File");
+
+            JMenuItem saveButton = new JMenuItem("Save");
+            saveButton.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, InputEvent.CTRL_MASK));
             saveButton.setActionCommand("Save");
             saveButton.addActionListener(this);
-            this.add(saveButton);
+            fileMenu.add(saveButton);
 
-            Button loadButton = new Button("Load");
-            loadButton.setPreferredSize(new Dimension(100, 25));
+            JMenuItem loadButton = new JMenuItem("Load");
+            loadButton.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, InputEvent.CTRL_MASK));
             loadButton.setActionCommand("Load");
             loadButton.addActionListener(this);
-            this.add(loadButton);
+            fileMenu.add(loadButton);
 
-            Button importButton = new Button("Import");
-            importButton.setPreferredSize(new Dimension(100, 25));
+            JMenuItem importButton = new JMenuItem("Import");
             importButton.setActionCommand("Import");
             importButton.addActionListener(this);
-            this.add(importButton);
+            fileMenu.add(importButton);
 
-            Button rollButton = new Button("Roll");
-            rollButton.setPreferredSize(new Dimension(100, 25));
+            this.add(fileMenu);
+
+            JMenuItem rollButton = new JMenuItem("Roll");
+            rollButton.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_R, InputEvent.CTRL_MASK));
             rollButton.setActionCommand("Roll");
             rollButton.addActionListener(this);
+
+            rollButton.setMaximumSize(new Dimension(rollButton.getPreferredSize().width, Integer.MAX_VALUE));
             this.add(rollButton);
 
-            Button infoButton = new Button("Info");
-            infoButton.setPreferredSize(new Dimension(100,25));
+            JMenuItem infoButton = new JMenuItem("Info");
+            infoButton.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_I, InputEvent.CTRL_MASK));
             infoButton.setActionCommand("Info");
             infoButton.addActionListener(this);
+
+            infoButton.setMaximumSize(new Dimension(infoButton.getPreferredSize().width, Integer.MAX_VALUE));
             this.add(infoButton);
+
+            //this.add(Box.createHorizontalGlue());
         }
 
         public void actionPerformed(ActionEvent ae) {
@@ -214,12 +225,12 @@ public class CharacterSheetGUI extends JFrame {
                     UpdateAllFields();
                 }
 
-            } else if (ae.getActionCommand().equals("Import")) {
-                int returnVal = fileChooser.showOpenDialog(contentPane);
-                if (returnVal == JFileChooser.APPROVE_OPTION) {
-                    File file = fileChooser.getSelectedFile();
-                    this.dataHandler.ImportData(file);
-                }
+            //} else if (ae.getActionCommand().equals("Import")) {
+                //int returnVal = fileChooser.showOpenDialog(contentPane);
+                //if (returnVal == JFileChooser.APPROVE_OPTION) {
+                //    File file = fileChooser.getSelectedFile();
+                //    this.dataHandler.ImportData(file);
+                //}
             } else if (ae.getActionCommand().equals("Roll")) {
                 DisplayRollPanel();
             } else if (ae.getActionCommand().equals("Info")) {
@@ -253,6 +264,15 @@ public class CharacterSheetGUI extends JFrame {
             editorPane.setEditable(false);
 
             JOptionPane.showMessageDialog(contentPane, editorPane);
+        }
+
+        private class VerticalMenu extends JMenu{
+
+            public VerticalMenu(String label) {
+                super(label);
+                JPopupMenu pm = getPopupMenu();
+                pm.setLayout(new BoxLayout(pm, BoxLayout.PAGE_AXIS));
+            }
         }
     }
 
@@ -1263,7 +1283,6 @@ public class CharacterSheetGUI extends JFrame {
         }
 
         private class InCombatPanel extends JPanel {
-            //TODO add a new nested class for hit dice, make it implement rollable
             private TextBoxOverLabel armorClassPanel;
             private TextBoxOverLabel initiativePanel;
             private TextBoxOverLabel speedPanel;

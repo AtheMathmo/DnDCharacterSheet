@@ -1,5 +1,7 @@
 package gui;
 
+import engine.*;
+
 import javax.swing.*;
 import javax.swing.text.AbstractDocument;
 import java.awt.*;
@@ -9,19 +11,27 @@ import java.awt.event.ItemListener;
 import java.awt.event.KeyEvent;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Random;
 
 /**
  * Created by James Lucas (www.sleepycoding.co.uk) on 01/08/15.
  *
- * Contains panel instantiated by ToolBar. Allows custom rolls.
+ * Contains panel instantiated by TopMenu. Allows custom rolls.
  */
 public class RollPanel extends JPanel implements ItemListener {
 
     private static final String[] die = new String[] { "d4", "d6", "d8", "d12", "d20", "d100" };
+    private static final Random rand = new Random();
+
+    private static String consoleLog;
     private Font buttonFont;
 
     private JPanel defaultDicePanel;
+    private JSpinner countSpinner;
+    private JComboBox<String> diceSelector;
     private JTextField customDiceField;
+    private JTextField bonusField;
+
     private ButtonGroup buttonGroup;
     private JTextArea outputTextArea;
 
@@ -70,25 +80,18 @@ public class RollPanel extends JPanel implements ItemListener {
         defaultDicePanel.setLayout(new GridBagLayout());
 
         SpinnerNumberModel spinnerModel = new SpinnerNumberModel(1,1,10,1);
-        JSpinner countSpinner = new JSpinner(spinnerModel);
-
-        // Right now this isn't working
-        //TODO investigate
-        AbstractDocument spinnerDoc = (AbstractDocument) ((JSpinner.DefaultEditor)countSpinner.getEditor()).getTextField().getDocument();
-        NumericalFilter numFilter = new NumericalFilter();
-        numFilter.setMaxCharacters(2);
-        spinnerDoc.setDocumentFilter(numFilter);
+        countSpinner = new JSpinner(spinnerModel);
         constraints.gridx = 0; constraints.gridy = 0;
         defaultDicePanel.add(countSpinner, constraints);
 
         constraints.gridx += 1;
-        JComboBox<String> rollSelected = new JComboBox<>(die);
-        defaultDicePanel.add(rollSelected, constraints);
+        diceSelector = new JComboBox<>(die);
+        defaultDicePanel.add(diceSelector, constraints);
 
         constraints.gridx = 1; constraints.gridy = 2; constraints.gridwidth = 2;
         this.add(defaultDicePanel, constraints);
 
-        JTextField bonusField = new JTextField(5);
+        bonusField = new JTextField(5);
         AbstractDocument bonusDoc = (AbstractDocument) bonusField.getDocument();
         NumericalFilter signedFilter = new NumericalFilter();
         signedFilter.setNeedsSign(true); signedFilter.setMaxCharacters(4);
@@ -127,9 +130,11 @@ public class RollPanel extends JPanel implements ItemListener {
 
         outputTextArea = new JTextArea(6,25);
         outputTextArea.setEditable(false);
+        outputTextArea.setLineWrap(true);
+        outputTextArea.setWrapStyleWord(false);
         // use append and suffix with \n.
         JScrollPane outputScrollPane = new JScrollPane(outputTextArea);
-        outputScrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        outputScrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
         outputScrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
 
         constraints.gridy += 1; constraints.gridx = 0;
@@ -173,7 +178,98 @@ public class RollPanel extends JPanel implements ItemListener {
 
         @Override
         public void actionPerformed(ActionEvent e) {
-            outputTextArea.append("This test worked\n");
+            int[] rollValues = GetRoll();
+
+            if (rollValues.length == 3) {
+                String outputString = MakeRoll(rollValues[0], rollValues[1], rollValues[2]);
+                outputTextArea.append(outputString);
+            }
+        }
+
+        private String MakeRoll(int diceCount, int diceSize, int bonus) {
+            int[] rolls = new int[diceCount];
+            int sum = 0;
+
+            String resultString = String.format("Rolling %dd%d + %d: ", diceCount, diceSize, bonus);
+
+            for (int i = 0; i < diceCount; i++) {
+                rolls[i] = rand.nextInt(diceSize) + 1;
+
+                resultString += Integer.toString(rolls[i]);
+                sum += rolls[i];
+
+                resultString += " + ";
+            }
+
+            resultString += Integer.toString(bonus);
+            resultString += " = ";
+            resultString += Integer.toString(sum + bonus);
+
+
+            return (resultString + "\n");
+        }
+        private int[] GetRoll() {
+            String actionCommand = buttonGroup.getSelection().getActionCommand();
+            int diceCount = 0;
+            int diceSize = 0;
+            int bonus;
+
+            if (actionCommand.equals("default")) {
+                int[] diceValues = RollFromDiceString((String)diceSelector.getSelectedItem());
+                if (diceValues.length != 1) {
+                    outputTextArea.append("An unexpected error occurred. Please report to the issues page (see Info).\n");
+                    return new int[0];
+                }
+                diceCount = (int)countSpinner.getValue();
+                diceSize = diceValues[0];
+            } else if (actionCommand.equals("custom")) {
+                int[] diceValues = RollFromDiceString(customDiceField.getText());
+
+                if (diceValues.length < 2) {
+                    outputTextArea.append("Please input a valid dice in the format XdY.\n");
+                    return new int[0];
+                }
+                diceCount = diceValues[0];
+                diceSize = diceValues[1];
+            }
+            bonus = GetBonus(bonusField.getText());
+
+            return new int[] { diceCount, diceSize, bonus};
+
+        }
+
+        private int[] RollFromDiceString(String diceString) {
+            int dIndex = diceString.indexOf("d");
+            int stringLength = diceString.length();
+
+            if (dIndex == -1) {
+                return new int[0];
+            }
+
+            if (dIndex == 0) {
+                if (stringLength > 1)
+                    return new int[] { Integer.parseInt(diceString.substring(1)) };
+                else
+                    return new int[0];
+            }
+
+            int diceCount = Integer.parseInt(diceString.substring(0, dIndex));
+            if (stringLength <= dIndex + 1)
+                return new int[0];
+            int diceSize = Integer.parseInt(diceString.substring(dIndex+1));
+
+            return new int[] { diceCount, diceSize};
+        }
+
+        private int GetBonus(String signedString) {
+            if (signedString.length() < 2)
+            {
+                return 0;
+            }
+
+            boolean isPositive = signedString.startsWith("+");
+            int integerValue = Integer.parseInt(signedString.substring(1));
+            return isPositive ? integerValue : -integerValue;
         }
     }
 

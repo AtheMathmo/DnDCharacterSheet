@@ -34,7 +34,6 @@ public class DataHandler {
 
 	public Character ReadData(File file)
 	{
-		//TODO think about what happens when an invalid file is selected.
 		Character character;
 		System.out.println("Reading data.");
 
@@ -99,11 +98,7 @@ public class DataHandler {
 					break;
 				out.append(buffer, 0, rsz);
 			}
-		}
-		catch (UnsupportedEncodingException ex) {
-			System.out.println(ex.getMessage());
-		}
-		catch (IOException ex) {
+		} catch (IOException ex) {
 			System.out.println(ex.getMessage());
 		}
 		return out.toString();
