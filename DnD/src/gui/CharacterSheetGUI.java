@@ -21,11 +21,10 @@ import javax.swing.text.AbstractDocument;
 import javax.swing.text.JTextComponent;
 
 public class CharacterSheetGUI extends JFrame {
-    //TODO deal with fields for dice, so can autodetect the roll needed.
 
-    public final Font SectionTitleFont = new Font(Font.SANS_SERIF, Font.BOLD, 18);
+    public static final Font SectionTitleFont = new Font(Font.SANS_SERIF, Font.BOLD, 18);
 
-    public final Border SectionBorder = BorderFactory.createCompoundBorder(
+    public static final Border SectionBorder = BorderFactory.createCompoundBorder(
             BorderFactory.createBevelBorder(BevelBorder.LOWERED),
             BorderFactory.createEmptyBorder(10, 10, 10, 10));
 

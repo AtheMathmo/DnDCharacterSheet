@@ -47,7 +47,6 @@ public class DiceFilter extends DocumentFilter {
             if (dIndex == -1 && IsInteger(newText)) { // Integer before a d exists
                 return true;
             } else if (dIndex == -1 && IsInteger(currentText)) { // d after an integer exists
-                System.out.println(newText);
                 if (newText.contains("d") && IsIntegerWithd(newText, newText.indexOf("d"))) {
                     return true;
                 }
